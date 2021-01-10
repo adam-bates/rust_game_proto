@@ -10,6 +10,14 @@ fn main() -> types::Result {
     // Create ggez context
     let (ctx, events_loop) = &mut context::new_context();
 
+    let fs = ggez::filesystem::Filesystem {
+        vfs: ggez::vfs::OverlayFS::new(),
+        resources_path: std::path::PathBuf::default(),
+        zip_path: std::path::PathBuf::default(),
+        user_config_path: std::path::PathBuf::default(),
+        user_data_path: std::path::PathBuf::default(),
+    };
+
     ggez::filesystem::print_all(ctx);
 
     let config_path = ggez::filesystem::user_config_dir(ctx);

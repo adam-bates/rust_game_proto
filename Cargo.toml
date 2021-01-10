@@ -11,4 +11,7 @@ chrono = "~0.4.19"
 log = { version = "~0.4.11", features = ["max_level_debug", "release_max_level_warn"] }
 fern = "~0.6.0"
 
-ggez = "~0.5.1"
+# Custom branch off master @ ~0.5.1
+#  - last commit on master when originally branched off: https://github.com/adam-bates/ggez/commit/55ec63417dccf2e62de2db4d064e6d4dba0db7fa
+#  - private repo: https://github.com/adam-bates/custom-ggez.git
+ggez = { path = "../ggez" }
