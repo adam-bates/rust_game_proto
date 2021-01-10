@@ -1,5 +1,5 @@
 use super::error::types;
-use chrono::Local;
+use super::utils;
 
 #[cfg(not(debug_assertions))]
 const LOG_FILE_PATH: &str = ".logs";
@@ -15,7 +15,7 @@ fn log_filename() -> String {
     format!(
         "{name}.{ext}",
         ext = LOG_FILE_EXT,
-        name = Local::now().timestamp()
+        name = utils::time::now_timestamp(),
     )
 }
 
@@ -33,7 +33,7 @@ pub fn setup(_config_path: &std::path::Path) -> types::LogSetupResult<Output> {
         .format(move |out, message, record| {
             out.finish(format_args!(
                 "[{}][{:<5}][{}] {}",
-                Local::now().to_rfc3339(),
+                utils::time::now_iso8601(),
                 record.level(),
                 record.target(),
                 message
@@ -56,14 +56,12 @@ pub fn setup(_config_path: &std::path::Path) -> types::LogSetupResult<Output> {
 
         let filepath = logs_dir.join(filename);
 
-        if let Err(_) = std::fs::read_dir(logs_dir.clone()) {
-            if let Err(e) = std::fs::create_dir_all(logs_dir.clone()) {
-                println!(
-                    "ERROR: Unable to create log directory [{}]: {}",
-                    logs_dir.to_string_lossy(),
-                    e
-                );
-            }
+        if let Err(e) = utils::io::create_dir_if_not_exists(logs_dir.clone()) {
+            println!(
+                "ERROR: Unable to create log directory [{}]: {}",
+                logs_dir.to_string_lossy(),
+                e
+            );
         }
 
         match fern::log_file(filepath.clone()) {

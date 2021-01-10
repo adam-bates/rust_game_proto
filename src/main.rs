@@ -1,9 +1,10 @@
-use error::types;
-
 mod config;
 mod context;
 mod error;
 mod game;
+mod utils;
+
+use error::types;
 
 fn main() -> types::Result {
     let (ctx, events_loop) = &mut context::new_context();
