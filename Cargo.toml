@@ -5,7 +5,10 @@ authors = ["Adam Bates <adam@adambates.ca>"]
 edition = "2018"
 
 [dependencies]
-ggez = "~0.5.1"
+chrono = "~0.4.19"
 
 # set compile-time log level to warn in release, and debug in debug
 log = { version = "~0.4.11", features = ["max_level_debug", "release_max_level_warn"] }
+fern = "~0.6.0"
+
+ggez = "~0.5.1"
