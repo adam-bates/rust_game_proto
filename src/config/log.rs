@@ -42,6 +42,7 @@ pub fn setup(_config_path: &std::path::Path) -> types::LogSetupResult<Output> {
         .level_for(MODULE_NAME, log::LevelFilter::Info)
         .level_for(MODULE_NAME_GFX, log::LevelFilter::Off);
 
+    // Output to console in debug mode
     #[cfg(debug_assertions)]
     {
         dispatch.chain(std::io::stdout()).apply()?;
@@ -49,6 +50,7 @@ pub fn setup(_config_path: &std::path::Path) -> types::LogSetupResult<Output> {
         return Ok(Output);
     }
 
+    // Output to ~/.config/<APPLICATION_ID>/.logs/<TIMESTAMP>.log file in release mode
     #[cfg(not(debug_assertions))]
     {
         let logs_dir = _config_path.join(LOG_FILE_PATH);

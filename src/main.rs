@@ -7,7 +7,11 @@ mod utils;
 use error::types;
 
 fn main() -> types::Result {
+    // Create ggez context
     let (ctx, events_loop) = &mut context::new_context();
+
+    ggez::filesystem::print_all(ctx);
+
     let config_path = ggez::filesystem::user_config_dir(ctx);
 
     // Set up logger
