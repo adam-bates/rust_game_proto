@@ -1,11 +1,10 @@
 mod game;
+mod context;
+mod settings;
 
 use super::config;
 use super::error;
 
-pub fn run_game(
-    ctx: &mut ggez::Context,
-    events_loop: &mut ggez::event::EventsLoop,
-) -> ggez::GameResult {
-    game::run_game(ctx, events_loop)
+pub fn run_game(fs: ggez::filesystem::Filesystem) -> ggez::GameResult {
+    game::run_game(fs)
 }

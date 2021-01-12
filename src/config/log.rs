@@ -2,7 +2,7 @@ use super::error::types;
 use super::utils;
 
 #[cfg(not(debug_assertions))]
-const LOG_FILE_PATH: &str = ".logs";
+const LOG_FILE_DIR: &str = ".logs";
 
 #[cfg(not(debug_assertions))]
 const LOG_FILE_EXT: &str = "log";
@@ -20,14 +20,14 @@ fn log_filename() -> String {
 }
 
 #[cfg(debug_assertions)]
-pub struct Output;
+pub struct LogOptions;
 
 #[cfg(not(debug_assertions))]
-pub struct Output {
+pub struct LogOptions {
     filepath: std::path::PathBuf,
 }
 
-pub fn setup(_config_path: &std::path::Path) -> types::LogSetupResult<Output> {
+pub fn setup(_fs: &mut ggez::filesystem::Filesystem) -> types::Result<LogOptions> {
     #[allow(unused_mut)] // mut needed in release
     let mut dispatch = fern::Dispatch::new()
         .format(move |out, message, record| {
@@ -46,27 +46,33 @@ pub fn setup(_config_path: &std::path::Path) -> types::LogSetupResult<Output> {
     #[cfg(debug_assertions)]
     {
         dispatch.chain(std::io::stdout()).apply()?;
-
-        return Ok(Output);
+        return Ok(LogOptions);
     }
 
     // Output to ~/.config/<APPLICATION_ID>/.logs/<TIMESTAMP>.log file in release mode
     #[cfg(not(debug_assertions))]
     {
-        let logs_dir = _config_path.join(LOG_FILE_PATH);
-        let filename = log_filename();
+        let user_data_logs_path = _fs.user_data_path.join(LOG_FILE_DIR);
 
-        let filepath = logs_dir.join(filename);
-
-        if let Err(e) = utils::io::create_dir_if_not_exists(logs_dir.clone()) {
-            println!(
-                "ERROR: Unable to create log directory [{}]: {}",
-                logs_dir.to_string_lossy(),
-                e
-            );
+        {
+            let user_data_vfs = _fs
+                .find_vfs(_fs.user_data_path.as_path())
+                .ok_or_else(|| "Unable to find user data directory")?;
+            let dir_to_create = format!("/{}", LOG_FILE_DIR);
+            let dir_path_to_create = std::path::Path::new(&dir_to_create);
+            if let Err(e) = user_data_vfs.mkdir(dir_path_to_create) {
+                println!(
+                    "ERROR: Unable to create log directory [{}]: {}",
+                    user_data_logs_path.to_string_lossy(),
+                    e
+                );
+            }
         }
 
-        match fern::log_file(filepath.clone()) {
+        let filename = log_filename();
+        let filepath = user_data_logs_path.join(&filename);
+
+        match fern::log_file(filepath.as_path()) {
             Ok(log_file) => dispatch = dispatch.chain(log_file),
             Err(e) => println!(
                 "ERROR: Unable to create log file [{}]: {}",
@@ -77,16 +83,18 @@ pub fn setup(_config_path: &std::path::Path) -> types::LogSetupResult<Output> {
 
         dispatch.apply()?;
 
-        return Ok(Output { filepath });
+        return Ok(LogOptions { filepath });
     }
 }
 
-pub fn clean_up(_output: Output) -> types::Result {
+pub fn clean_up(_opts: LogOptions) -> types::Result {
     // Delete log file if nothing was written to it
     #[cfg(not(debug_assertions))]
-    if let Ok(data) = std::fs::read(_output.filepath.clone()) {
-        if data.len() == 0 {
-            std::fs::remove_file(_output.filepath)?;
+    {
+        if let Ok(bytes) = std::fs::read(_opts.filepath.as_path()) {
+            if bytes.len() == 0 {
+                std::fs::remove_file(_opts.filepath.as_path())?;
+            }
         }
     }
 

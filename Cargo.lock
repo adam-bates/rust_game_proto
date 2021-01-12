@@ -468,6 +468,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "directories"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8fed639d60b58d0f53498ab13d26f621fd77569cc6edb031f4cc36a2ad9da0f"
+dependencies = [
+ "dirs-sys",
+]
+
+[[package]]
 name = "dirs-sys"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -653,7 +662,7 @@ version = "0.5.1"
 dependencies = [
  "approx",
  "bitflags",
- "directories",
+ "directories 2.0.2",
  "gfx",
  "gfx_core",
  "gfx_device_gl",
@@ -1722,6 +1731,7 @@ name = "rust_game_proto"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "directories 3.0.1",
  "fern",
  "ggez",
  "log",
