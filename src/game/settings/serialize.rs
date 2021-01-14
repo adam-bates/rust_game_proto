@@ -4,11 +4,13 @@ use std::path::Path;
 
 const SETTINGS_PATH: &str = "/settings.conf";
 
-pub fn load_settings(fs: &mut ggez::filesystem::Filesystem) -> GameResult<Option<Settings>> {
-    let config_vfs = fs
-        .find_vfs(&fs.user_config_path)
-        .ok_or_else(|| GameError::ConfigError("Failed to find user config vfs".to_string()))?;
+fn find_config_vfs(fs: &ggez::filesystem::Filesystem) -> GameResult<&Box<dyn ggez::vfs::VFS>> {
+    fs.find_vfs(&fs.user_config_path)
+        .ok_or_else(|| GameError::ConfigError("Failed to find user config vfs".to_string()))
+}
 
+pub fn load_settings(fs: &mut ggez::filesystem::Filesystem) -> GameResult<Option<Settings>> {
+    let config_vfs = find_config_vfs(fs)?;
     let settings_path = Path::new(SETTINGS_PATH);
 
     if !filesystem::file_exists(config_vfs, settings_path) {
@@ -21,10 +23,7 @@ pub fn load_settings(fs: &mut ggez::filesystem::Filesystem) -> GameResult<Option
 }
 
 pub fn save_settings(fs: &mut ggez::filesystem::Filesystem, settings: &Settings) -> GameResult {
-    let config_vfs = fs
-        .find_vfs(&fs.user_config_path)
-        .ok_or_else(|| GameError::ConfigError("Failed to find user config vfs".to_string()))?;
-
+    let config_vfs = find_config_vfs(fs)?;
     let settings_path = Path::new(SETTINGS_PATH);
 
     let mut file = filesystem::create_file(config_vfs, settings_path)?;
