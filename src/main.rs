@@ -4,9 +4,9 @@ mod filesystem;
 mod game;
 mod utils;
 
-use error::types;
+use error::types::Result;
 
-fn main() -> types::Result {
+fn main() -> Result {
     // Initialize filesystem
     let mut fs = filesystem::new_filesystem()?;
 

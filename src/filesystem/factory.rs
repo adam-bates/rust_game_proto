@@ -1,10 +1,9 @@
-use super::config;
-use super::error::types;
+use super::{config, Filesystem, Result};
 use directories::ProjectDirs;
 
 const ASSETS_PATH: &str = "assets";
 
-fn get_project_dirs() -> types::Result<ProjectDirs> {
+fn get_project_dirs() -> Result<ProjectDirs> {
     match ProjectDirs::from("", config::APPLICATION_AUTHOR, config::APPLICATION_ID) {
         Some(dirs) => Ok(dirs),
         _ => Err(Box::new(ggez::GameError::FilesystemError(String::from(
@@ -23,7 +22,7 @@ fn push_physical_fs<'a>(
     path
 }
 
-pub fn new_filesystem() -> types::Result<ggez::filesystem::Filesystem> {
+pub fn new_filesystem() -> Result<Filesystem> {
     let mut root_path = std::env::current_exe()?;
     let project_dirs = get_project_dirs()?;
 

@@ -5,11 +5,14 @@ use super::settings;
 pub fn run_game(mut fs: ggez::filesystem::Filesystem) -> types::GameResult {
     let user_settings = settings::find_or_default_for_user(&mut fs)?;
     let (ctx, events_loop) = &mut context::new_context(fs, &user_settings);
+
+    println!("{:?}", user_settings);
     
     // ...
 
     // TODO: Customize
-    ggez::event::run(ctx, events_loop, &mut State {})
+    let mut state = State {};
+    ggez::event::run(ctx, events_loop, &mut state)
 }
 
 struct State;

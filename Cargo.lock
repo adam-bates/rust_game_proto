@@ -1735,6 +1735,9 @@ dependencies = [
  "fern",
  "ggez",
  "log",
+ "serde",
+ "serde_derive",
+ "toml",
 ]
 
 [[package]]
