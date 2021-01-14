@@ -1,8 +1,6 @@
-use super::{filesystem, GameResult, Settings};
+use super::{config, filesystem, GameResult, Settings};
 use ggez::error::GameError;
 use std::path::Path;
-
-const SETTINGS_PATH: &str = "/settings.conf";
 
 fn find_config_vfs(fs: &ggez::filesystem::Filesystem) -> GameResult<&Box<dyn ggez::vfs::VFS>> {
     fs.find_vfs(&fs.user_config_path)
@@ -11,7 +9,7 @@ fn find_config_vfs(fs: &ggez::filesystem::Filesystem) -> GameResult<&Box<dyn gge
 
 pub fn load_settings(fs: &mut ggez::filesystem::Filesystem) -> GameResult<Option<Settings>> {
     let config_vfs = find_config_vfs(fs)?;
-    let settings_path = Path::new(SETTINGS_PATH);
+    let settings_path = Path::new(config::SETTINGS_FILE_PATH);
 
     if !filesystem::file_exists(config_vfs, settings_path) {
         return Ok(None);
@@ -24,7 +22,7 @@ pub fn load_settings(fs: &mut ggez::filesystem::Filesystem) -> GameResult<Option
 
 pub fn save_settings(fs: &mut ggez::filesystem::Filesystem, settings: &Settings) -> GameResult {
     let config_vfs = find_config_vfs(fs)?;
-    let settings_path = Path::new(SETTINGS_PATH);
+    let settings_path = Path::new(config::SETTINGS_FILE_PATH);
 
     let mut file = filesystem::create_file(config_vfs, settings_path)?;
     settings.to_toml_file(&mut file)?;

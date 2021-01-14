@@ -1,12 +1,6 @@
 use super::error::types;
 use super::utils;
 
-#[cfg(not(debug_assertions))]
-const LOG_FILE_DIR: &str = ".logs";
-
-#[cfg(not(debug_assertions))]
-const LOG_FILE_EXT: &str = "log";
-
 const MODULE_NAME: &str = super::APPLICATION_ID;
 const MODULE_NAME_GFX: &str = "gfx";
 
@@ -14,7 +8,7 @@ const MODULE_NAME_GFX: &str = "gfx";
 fn log_filename() -> String {
     format!(
         "{name}.{ext}",
-        ext = LOG_FILE_EXT,
+        ext = super::LOG_FILE_EXT,
         name = utils::time::now_timestamp(),
     )
 }
@@ -52,13 +46,13 @@ pub fn setup(_fs: &mut ggez::filesystem::Filesystem) -> types::Result<LogOptions
     // Output to ~/.config/<APPLICATION_ID>/.logs/<TIMESTAMP>.log file in release mode
     #[cfg(not(debug_assertions))]
     {
-        let user_data_logs_path = _fs.user_data_path.join(LOG_FILE_DIR);
+        let user_data_logs_path = _fs.user_data_path.join(super::LOGS_PATH_DIRNAME);
 
         {
             let user_data_vfs = _fs
                 .find_vfs(_fs.user_data_path.as_path())
                 .ok_or_else(|| "Unable to find user data directory")?;
-            let dir_to_create = format!("/{}", LOG_FILE_DIR);
+            let dir_to_create = format!("/{}", super::LOGS_PATH_DIRNAME);
             let dir_path_to_create = std::path::Path::new(&dir_to_create);
             if let Err(e) = user_data_vfs.mkdir(dir_path_to_create) {
                 println!(

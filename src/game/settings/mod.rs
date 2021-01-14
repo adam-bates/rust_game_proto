@@ -3,7 +3,7 @@ pub mod types;
 
 pub use types::Settings;
 
-use super::{error::types::GameResult, filesystem};
+use super::{config, error::types::GameResult, filesystem};
 use serialize::{load_settings, save_settings};
 
 pub fn find_or_default_for_user(

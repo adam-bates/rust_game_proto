@@ -1,7 +1,7 @@
 use super::{config, Filesystem, Result};
 use directories::ProjectDirs;
 
-const ASSETS_PATH: &str = "assets";
+const ASSETS_PATH: &str = "assets"; // TODO: config?
 
 fn get_project_dirs() -> Result<ProjectDirs> {
     match ProjectDirs::from("", config::APPLICATION_AUTHOR, config::APPLICATION_ID) {
