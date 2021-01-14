@@ -3,9 +3,7 @@ use super::context;
 use super::settings;
 
 pub fn run_game(mut fs: ggez::filesystem::Filesystem) -> types::GameResult {
-    fs.log_all();
-    
-    let user_settings = settings::find_or_default_for_user();
+    let user_settings = settings::find_or_default_for_user(&mut fs)?;
     let (ctx, events_loop) = &mut context::new_context(fs, &user_settings);
     
     // ...
