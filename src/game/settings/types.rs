@@ -22,10 +22,12 @@ pub enum AspectRatio {
 // Resolution, window-mode (fullscreen, windowed, windowed-fullscreen), aspect ratio, color-blind mode
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VideoSettings {
-    window_width: usize,
-    window_height: usize,
-    window_mode: FullscreenType,
-    aspect_ratio: AspectRatio,
+    pub window_width: usize,
+    pub window_height: usize,
+    pub window_mode: FullscreenType,
+    pub aspect_ratio: AspectRatio,
+    pub vsync: bool,
+    pub srgb: bool,
     // colour_blind_mode,
 }
 
@@ -36,6 +38,8 @@ impl Default for VideoSettings {
             window_height: 1080, // TODO
             window_mode: FullscreenType::Windowed,
             aspect_ratio: AspectRatio::Stretch,
+            vsync: true,
+            srgb: true,
         }
     }
 }
@@ -84,6 +88,33 @@ impl Settings {
     }
 }
 
-pub fn build_default_settings() -> Settings {
-    Settings::default() // TODO
+impl Into<ggez::conf::Conf> for &Settings {
+    fn into(self) -> ggez::conf::Conf {
+        ggez::conf::Conf {
+            window_mode: ggez::conf::WindowMode {
+                fullscreen_type: self.video_settings.window_mode,
+                maximized: self.video_settings.window_mode != ggez::conf::FullscreenType::Windowed,
+                borderless: self.video_settings.window_mode != ggez::conf::FullscreenType::Windowed,
+                width: self.video_settings.window_width as f32,
+                height: self.video_settings.window_height as f32,
+                min_width: 0., // TODO: config::CANVAS_WIDTH or RENDER_WIDTH or whatever,
+                min_height: 0., // TODO: "   "
+                max_width: 0.,
+                max_height: 0.,
+                resizable: true,
+            },
+            window_setup: ggez::conf::WindowSetup {
+                vsync: self.video_settings.vsync,
+                srgb: self.video_settings.srgb,
+                title: "TITLE".to_string(), // TODO: config::APPLICATION_NAME
+                icon: "".to_string(),       // TODO
+                samples: ggez::conf::NumSamples::Zero,
+            },
+            backend: ggez::conf::Backend::default(),
+            modules: ggez::conf::ModuleConf {
+                gamepad: true,
+                audio: true,
+            },
+        }
+    }
 }
