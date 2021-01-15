@@ -1,4 +1,4 @@
-use super::GameResult;
+use super::{config, GameResult};
 use ggez::conf::FullscreenType;
 use serde_derive::{Deserialize, Serialize};
 use std::io;
@@ -34,8 +34,8 @@ pub struct VideoSettings {
 impl Default for VideoSettings {
     fn default() -> Self {
         Self {
-            window_width: 1920,  // TODO
-            window_height: 1080, // TODO
+            window_width: config::VIEWPORT_PIXELS_WIDTH_USIZE,
+            window_height: config::VIEWPORT_PIXELS_HEIGHT_USIZE,
             window_mode: FullscreenType::Windowed,
             aspect_ratio: AspectRatio::Stretch,
             vsync: true,
@@ -97,8 +97,8 @@ impl Into<ggez::conf::Conf> for &Settings {
                 borderless: self.video_settings.window_mode != ggez::conf::FullscreenType::Windowed,
                 width: self.video_settings.window_width as f32,
                 height: self.video_settings.window_height as f32,
-                min_width: 0., // TODO: config::CANVAS_WIDTH or RENDER_WIDTH or whatever,
-                min_height: 0., // TODO: "   "
+                min_width: config::VIEWPORT_PIXELS_WIDTH_F32,
+                min_height: config::VIEWPORT_PIXELS_HEIGHT_F32,
                 max_width: 0.,
                 max_height: 0.,
                 resizable: true,

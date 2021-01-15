@@ -46,13 +46,13 @@ pub fn setup(_fs: &mut ggez::filesystem::Filesystem) -> types::Result<LogOptions
     // Output to ~/.config/<APPLICATION_ID>/.logs/<TIMESTAMP>.log file in release mode
     #[cfg(not(debug_assertions))]
     {
-        let user_data_logs_path = _fs.user_data_path.join(super::LOGS_PATH_DIRNAME);
+        let user_data_logs_path = _fs.user_data_path.join(super::LOGS_DIR_NAME);
 
         {
             let user_data_vfs = _fs
                 .find_vfs(_fs.user_data_path.as_path())
                 .ok_or_else(|| "Unable to find user data directory")?;
-            let dir_to_create = format!("/{}", super::LOGS_PATH_DIRNAME);
+            let dir_to_create = format!("/{}", super::LOGS_DIR_NAME);
             let dir_path_to_create = std::path::Path::new(&dir_to_create);
             if let Err(e) = user_data_vfs.mkdir(dir_path_to_create) {
                 println!(

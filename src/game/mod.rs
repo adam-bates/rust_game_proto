@@ -1,4 +1,6 @@
 mod game;
+mod game_state;
+mod game_loop;
 mod context;
 mod settings;
 

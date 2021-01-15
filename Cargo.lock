@@ -1734,10 +1734,12 @@ dependencies = [
  "directories 3.0.1",
  "fern",
  "ggez",
+ "gilrs",
  "log",
  "serde",
  "serde_derive",
  "toml",
+ "winit",
 ]
 
 [[package]]
