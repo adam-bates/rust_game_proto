@@ -1,6 +1,7 @@
 use super::context;
 use super::error::types;
 use super::game_loop;
+use super::game_state;
 use super::settings;
 
 pub fn run_game(mut fs: ggez::filesystem::Filesystem) -> types::GameResult {
@@ -11,5 +12,7 @@ pub fn run_game(mut fs: ggez::filesystem::Filesystem) -> types::GameResult {
         settings::initialize_first_load(ctx, &mut user_settings)?;
     }
 
-    game_loop::run(ctx, events_loop)
+    let state = game_state::MainState::new(ctx, user_settings);
+
+    game_loop::run(ctx, events_loop, state)
 }

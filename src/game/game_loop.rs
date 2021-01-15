@@ -5,17 +5,15 @@ use ggez::{
 };
 use winit::{dpi, DeviceEvent, ElementState, Event, KeyboardInput, MouseScrollDelta, WindowEvent};
 
-pub fn run(ctx: &mut ggez::Context, events_loop: &mut ggez::event::EventsLoop) -> GameResult {
-    let mut state = game_state::MainState {};
-
+pub fn run(
+    ctx: &mut ggez::Context,
+    events_loop: &mut ggez::event::EventsLoop,
+    mut state: game_state::MainState,
+) -> GameResult {
     while ctx.continuing {
-        // If you are writing your own event loop, make sure
-        // you include `timer_context.tick()` and
-        // `ctx.process_event()` calls.  These update ggez's
-        // internal state however necessary.
         ctx.timer_context.tick();
         events_loop.poll_events(|event| {
-            ctx.process_event(&event);
+            ctx.process_event(&event); // TODO: Process these in our custom loop to avoid the clone
             match event {
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::Resized(logical_size) => {
@@ -129,27 +127,26 @@ pub fn run(ctx: &mut ggez::Context, events_loop: &mut ggez::event::EventsLoop) -
                 Event::Suspended(_) => (),
             }
         });
-        // Handle gamepad events if necessary.
-        if ctx.conf.modules.gamepad {
-            while let Some(gilrs::Event { id, event, .. }) = ctx.gamepad_context.next_event() {
-                match event {
-                    gilrs::EventType::ButtonPressed(button, _) => {
-                        state.gamepad_button_down_event(ctx, button, GamepadId(id));
-                    }
-                    gilrs::EventType::ButtonReleased(button, _) => {
-                        state.gamepad_button_up_event(ctx, button, GamepadId(id));
-                    }
-                    gilrs::EventType::AxisChanged(axis, value, _) => {
-                        state.gamepad_axis_event(ctx, axis, value, GamepadId(id));
-                    }
-                    gilrs::EventType::ButtonRepeated(_, _) => {}
-                    gilrs::EventType::ButtonChanged(_, _, _) => {}
-                    gilrs::EventType::Connected => {}
-                    gilrs::EventType::Disconnected => {}
-                    gilrs::EventType::Dropped => {}
+
+        while let Some(gilrs::Event { id, event, .. }) = ctx.gamepad_context.next_event() {
+            match event {
+                gilrs::EventType::ButtonPressed(button, _) => {
+                    state.gamepad_button_down_event(ctx, button, GamepadId(id));
                 }
+                gilrs::EventType::ButtonReleased(button, _) => {
+                    state.gamepad_button_up_event(ctx, button, GamepadId(id));
+                }
+                gilrs::EventType::AxisChanged(axis, value, _) => {
+                    state.gamepad_axis_event(ctx, axis, value, GamepadId(id));
+                }
+                gilrs::EventType::ButtonRepeated(_, _) => {}
+                gilrs::EventType::ButtonChanged(_, _, _) => {}
+                gilrs::EventType::Connected => {}
+                gilrs::EventType::Disconnected => {}
+                gilrs::EventType::Dropped => {}
             }
         }
+
         state.update(ctx)?;
         state.draw(ctx)?;
     }
