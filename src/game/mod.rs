@@ -1,7 +1,8 @@
-mod game;
-mod game_state;
-mod game_loop;
 mod context;
+mod events;
+mod game;
+mod game_loop;
+mod game_state;
 mod settings;
 
 use super::{config, error, filesystem};
