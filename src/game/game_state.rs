@@ -1,10 +1,14 @@
 use super::{error::types::GameResult, events, settings};
 
-pub struct MainState;
+pub struct MainState {
+    pub target_fps: u32,
+}
 
 impl MainState {
     pub fn new(ctx: &mut ggez::Context, user_settings: settings::Settings) -> Self {
-        Self
+        Self {
+            target_fps: 144, // TODO
+        }
     }
 }
 
