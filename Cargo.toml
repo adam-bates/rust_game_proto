@@ -11,15 +11,18 @@ serde_derive = "~1.0"
 toml = "~0.5.8"
 nalgebra = "~0.24.0"
 
-winit = "~0.19.3"
-gilrs = "~0.7.0"
+specs = "~0.16.1"
+specs-derive = "~0.4.1"
 
 # Custom branch off master @ ~0.5.1
 #  - last commit on master when originally branched off: https://github.com/adam-bates/ggez/commit/55ec63417dccf2e62de2db4d064e6d4dba0db7fa
 #  - private repo: https://github.com/adam-bates/custom-ggez.git
 ggez = { path = "../ggez" }
 
-# [dev-dependencies]
+# Needs to be compatible with ggez
+winit = "~0.19.3"
+gilrs = "~0.7.0"
+
 chrono = "~0.4.19"
 
 # set compile-time log level to warn in release, and debug in debug

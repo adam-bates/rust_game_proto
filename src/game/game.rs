@@ -14,5 +14,7 @@ pub fn run_game(mut fs: ggez::filesystem::Filesystem) -> types::GameResult {
 
     let state = game_state::MainState::new(ctx, user_settings);
 
+    let _w = specs::World::default();
+
     game_loop::run(ctx, events_loop, state)
 }

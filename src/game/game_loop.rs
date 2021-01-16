@@ -1,5 +1,8 @@
-use super::{error::types::GameResult, events, game_state};
-use ggez::event::EventHandler;
+use super::{
+    error::types::GameResult,
+    events::{self, EventHandler},
+    game_state,
+};
 
 // Main game loop
 pub fn run(
@@ -24,6 +27,8 @@ pub fn run(
 
         state.update(ctx)?;
         state.draw(ctx)?;
+
+        ggez::graphics::present(ctx)?
     }
 
     Ok(())

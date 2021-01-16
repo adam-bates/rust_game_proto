@@ -1,5 +1,5 @@
-use super::{game_state, GameResult};
-use ggez::{event::EventHandler, input::gamepad::GamepadId};
+use super::{game_state, EventHandler, GameResult};
+use ggez::input::gamepad::GamepadId;
 
 pub fn process_gamepad(ctx: &mut ggez::Context, state: &mut game_state::MainState) -> GameResult {
     while let Some(gilrs::Event { id, event, .. }) = ctx.gamepad_context.next_event() {

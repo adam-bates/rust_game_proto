@@ -1,4 +1,4 @@
-use super::settings;
+use super::{error::types::GameResult, events, settings};
 
 pub struct MainState;
 
@@ -8,12 +8,12 @@ impl MainState {
     }
 }
 
-impl ggez::event::EventHandler for MainState {
-    fn update(&mut self, _ctx: &mut ggez::Context) -> ggez::GameResult {
+impl events::EventHandler for MainState {
+    fn update(&mut self, ctx: &mut ggez::Context) -> GameResult {
         Ok(())
     }
 
-    fn draw(&mut self, _ctx: &mut ggez::Context) -> ggez::GameResult {
+    fn draw(&self, ctx: &mut ggez::Context) -> GameResult {
         Ok(())
     }
 }

@@ -1,6 +1,6 @@
-use super::{game_state, GameResult};
+use super::{game_state, EventHandler, GameResult};
 use ggez::{
-    event::{quit, EventHandler},
+    event::quit,
     input::{keyboard, mouse},
 };
 use winit::{dpi, DeviceEvent, ElementState, Event, KeyboardInput, MouseScrollDelta, WindowEvent};
