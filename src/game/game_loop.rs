@@ -146,20 +146,33 @@ fn process_device_event(
     state: &mut game_state::MainState,
     event: DeviceEvent,
 ) -> GameResult {
-    if let ggez::event::winit_event::DeviceEvent::MouseMotion { delta: (x, y) } = event {
-        ctx.mouse_context
-            .set_last_delta(ggez::graphics::Point2::new(x as f32, y as f32));
-    }
-
     match event {
         DeviceEvent::Added => {}
         DeviceEvent::Removed => {}
-        DeviceEvent::MouseMotion { delta } => {}
+        DeviceEvent::MouseMotion { delta: (x, y) } => {
+            ctx.mouse_context
+                .set_last_delta(ggez::graphics::Point2::new(x as f32, y as f32));
+        }
         DeviceEvent::MouseWheel { delta } => {}
         DeviceEvent::Motion { axis, value } => {}
         DeviceEvent::Button { button, state } => {}
         DeviceEvent::Key(_) => {}
         DeviceEvent::Text { codepoint } => {}
+    }
+
+    Ok(())
+}
+
+fn process_event(
+    ctx: &mut ggez::Context,
+    state: &mut game_state::MainState,
+    event: Event,
+) -> GameResult {
+    match event {
+        Event::WindowEvent { event, .. } => process_window_event(ctx, state, event)?,
+        Event::DeviceEvent { event, .. } => process_device_event(ctx, state, event)?,
+        Event::Awakened => {}
+        Event::Suspended(_) => {}
     }
 
     Ok(())
@@ -183,21 +196,6 @@ fn process_gamepad(ctx: &mut ggez::Context, state: &mut game_state::MainState) -
             gilrs::EventType::Disconnected => {}
             gilrs::EventType::Dropped => {}
         }
-    }
-
-    Ok(())
-}
-
-fn process_event(
-    ctx: &mut ggez::Context,
-    state: &mut game_state::MainState,
-    event: Event,
-) -> GameResult {
-    match event {
-        Event::WindowEvent { event, .. } => process_window_event(ctx, state, event)?,
-        Event::DeviceEvent { event, .. } => process_device_event(ctx, state, event)?,
-        Event::Awakened => {}
-        Event::Suspended(_) => {}
     }
 
     Ok(())
