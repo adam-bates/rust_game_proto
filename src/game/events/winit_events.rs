@@ -21,18 +21,16 @@ fn process_window_event(
             }
 
             // let actual_size = logical_size;
-            state.resize_event(ctx, logical_size.width as f32, logical_size.height as f32);
+            state.resize_event(ctx, logical_size.width as f32, logical_size.height as f32)?;
         }
         WindowEvent::CloseRequested => {
-            if !state.quit_event(ctx) {
-                quit(ctx);
-            }
+            quit(ctx);
         }
         WindowEvent::Focused(gained) => {
-            state.focus_event(ctx, gained);
+            state.focus_event(ctx, gained)?;
         }
         WindowEvent::ReceivedCharacter(ch) => {
-            state.text_input_event(ctx, ch);
+            state.text_input_event(ctx, ch)?;
         }
         WindowEvent::KeyboardInput {
             input:
@@ -53,7 +51,7 @@ fn process_window_event(
                 }
 
                 let repeat = keyboard::is_key_repeated(ctx);
-                state.key_down_event(ctx, keycode, modifiers.into(), repeat);
+                state.key_down_event(ctx, keycode, modifiers.into(), repeat)?;
             }
             ggez::event::winit_event::ElementState::Released => {
                 // From ctx.process_event(&event)
@@ -62,7 +60,7 @@ fn process_window_event(
                         .set_modifiers(keyboard::KeyMods::from(modifiers));
                     ctx.keyboard_context.set_key(keycode, false);
                 }
-                state.key_up_event(ctx, keycode, modifiers.into());
+                state.key_up_event(ctx, keycode, modifiers.into())?;
             }
         },
         WindowEvent::MouseWheel { delta, .. } => {
@@ -70,7 +68,7 @@ fn process_window_event(
                 MouseScrollDelta::LineDelta(x, y) => (x, y),
                 MouseScrollDelta::PixelDelta(dpi::LogicalPosition { x, y }) => (x as f32, y as f32),
             };
-            state.mouse_wheel_event(ctx, x, y);
+            state.mouse_wheel_event(ctx, x, y)?;
         }
         WindowEvent::MouseInput {
             state: element_state,
@@ -89,10 +87,10 @@ fn process_window_event(
             let position = mouse::position(ctx);
             match element_state {
                 ElementState::Pressed => {
-                    state.mouse_button_down_event(ctx, button, position.x, position.y)
+                    state.mouse_button_down_event(ctx, button, position.x, position.y)?;
                 }
                 ElementState::Released => {
-                    state.mouse_button_up_event(ctx, button, position.x, position.y)
+                    state.mouse_button_up_event(ctx, button, position.x, position.y)?;
                 }
             }
         }
@@ -111,7 +109,7 @@ fn process_window_event(
 
             let position = mouse::position(ctx);
             let delta = mouse::delta(ctx);
-            state.mouse_motion_event(ctx, position.x, position.y, delta.x, delta.y);
+            state.mouse_motion_event(ctx, position.x, position.y, delta.x, delta.y)?;
         }
         WindowEvent::Moved(_) => {}
         WindowEvent::Destroyed => {}

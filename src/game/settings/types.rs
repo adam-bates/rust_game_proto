@@ -10,23 +10,30 @@ pub enum AspectRatio {
     Stretch,
 
     #[serde(rename = "16:9")]
-    Ratio_16_9,
+    Ratio16By9,
 
     #[serde(rename = "15:9")]
-    Ratio_15_9,
+    Ratio15By9,
 
     #[serde(rename = "4:3")]
-    Ratio_4_3,
+    Ratio4By3,
 }
 
 // Resolution, window-mode (fullscreen, windowed, windowed-fullscreen), aspect ratio, color-blind mode
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VideoSettings {
-    pub window_width: usize,
-    pub window_height: usize,
-    pub window_mode: FullscreenType,
+    pub windowed_width: usize,
+    pub windowed_height: usize,
+
+    #[serde(rename = "window_mode")]
+    pub fullscreen_type: FullscreenType,
+
     pub aspect_ratio: AspectRatio,
+
+    pub target_fps: u32,
+
     pub vsync: bool,
+
     pub srgb: bool,
     // colour_blind_mode,
 }
@@ -34,10 +41,11 @@ pub struct VideoSettings {
 impl Default for VideoSettings {
     fn default() -> Self {
         Self {
-            window_width: config::VIEWPORT_PIXELS_WIDTH_USIZE,
-            window_height: config::VIEWPORT_PIXELS_HEIGHT_USIZE,
-            window_mode: FullscreenType::Windowed,
+            windowed_width: config::VIEWPORT_PIXELS_WIDTH_USIZE,
+            windowed_height: config::VIEWPORT_PIXELS_HEIGHT_USIZE,
+            fullscreen_type: FullscreenType::Windowed,
             aspect_ratio: AspectRatio::Stretch,
+            target_fps: 144, // TODO
             vsync: true,
             srgb: true,
         }
@@ -88,33 +96,57 @@ impl Settings {
     }
 }
 
+impl Into<ggez::conf::WindowMode> for &Settings {
+    fn into(self) -> ggez::conf::WindowMode {
+        ggez::conf::WindowMode {
+            fullscreen_type: self.video_settings.fullscreen_type,
+            maximized: self.video_settings.fullscreen_type != ggez::conf::FullscreenType::Windowed,
+            borderless: self.video_settings.fullscreen_type != ggez::conf::FullscreenType::Windowed,
+            width: self.video_settings.windowed_width as f32,
+            height: self.video_settings.windowed_height as f32,
+            min_width: config::VIEWPORT_PIXELS_WIDTH_F32,
+            min_height: config::VIEWPORT_PIXELS_HEIGHT_F32,
+            max_width: 0.,
+            max_height: 0.,
+            resizable: true,
+        }
+    }
+}
+
+impl Into<ggez::conf::WindowSetup> for &Settings {
+    fn into(self) -> ggez::conf::WindowSetup {
+        ggez::conf::WindowSetup {
+            vsync: self.video_settings.vsync,
+            srgb: self.video_settings.srgb,
+            title: "TITLE".to_string(), // TODO: config::APPLICATION_NAME
+            icon: "".to_string(),       // TODO
+            samples: ggez::conf::NumSamples::Zero,
+        }
+    }
+}
+
+impl Into<ggez::conf::Backend> for &Settings {
+    fn into(self) -> ggez::conf::Backend {
+        ggez::conf::Backend::default()
+    }
+}
+
+impl Into<ggez::conf::ModuleConf> for &Settings {
+    fn into(self) -> ggez::conf::ModuleConf {
+        ggez::conf::ModuleConf {
+            gamepad: true,
+            audio: true,
+        }
+    }
+}
+
 impl Into<ggez::conf::Conf> for &Settings {
     fn into(self) -> ggez::conf::Conf {
         ggez::conf::Conf {
-            window_mode: ggez::conf::WindowMode {
-                fullscreen_type: self.video_settings.window_mode,
-                maximized: self.video_settings.window_mode != ggez::conf::FullscreenType::Windowed,
-                borderless: self.video_settings.window_mode != ggez::conf::FullscreenType::Windowed,
-                width: self.video_settings.window_width as f32,
-                height: self.video_settings.window_height as f32,
-                min_width: config::VIEWPORT_PIXELS_WIDTH_F32,
-                min_height: config::VIEWPORT_PIXELS_HEIGHT_F32,
-                max_width: 0.,
-                max_height: 0.,
-                resizable: true,
-            },
-            window_setup: ggez::conf::WindowSetup {
-                vsync: self.video_settings.vsync,
-                srgb: self.video_settings.srgb,
-                title: "TITLE".to_string(), // TODO: config::APPLICATION_NAME
-                icon: "".to_string(),       // TODO
-                samples: ggez::conf::NumSamples::Zero,
-            },
-            backend: ggez::conf::Backend::default(),
-            modules: ggez::conf::ModuleConf {
-                gamepad: true,
-                audio: true,
-            },
+            window_mode: self.into(),
+            window_setup: self.into(),
+            backend: self.into(),
+            modules: self.into(),
         }
     }
 }

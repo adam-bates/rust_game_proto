@@ -12,7 +12,7 @@ pub fn run_game(mut fs: ggez::filesystem::Filesystem) -> types::GameResult {
         settings::initialize_first_load(ctx, &mut user_settings)?;
     }
 
-    let state = game_state::MainState::new(ctx, user_settings);
+    let state = game_state::MainState::new(ctx, user_settings)?;
 
     let _w = specs::World::default();
 

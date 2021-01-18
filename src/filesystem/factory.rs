@@ -33,9 +33,14 @@ pub fn new_filesystem() -> Result<Filesystem> {
 
     let mut overlay_fs = ggez::vfs::OverlayFS::new();
 
-    // <game exe root>/resources/
+    // <game exe root>/assets/
+    // or <cargo root>/assets/ if run with cargo
     let assets_path = {
-        let mut path = root_path.clone();
+        let mut path = if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
+            std::path::PathBuf::from(manifest_dir)
+        } else {
+            root_path.clone()
+        };
         path.push(ASSETS_PATH);
 
         push_physical_fs(&mut overlay_fs, path, true)

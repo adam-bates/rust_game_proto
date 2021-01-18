@@ -14,7 +14,7 @@ fn run_update(
 ) -> GameResult<bool> {
     let mut update_changed = changed;
 
-    while ggez::timer::check_update_time(ctx, state.target_fps) {
+    while ggez::timer::check_update_time(ctx, state.settings.video_settings.target_fps) {
         update_changed = true;
         state.update(ctx)?;
     }
@@ -40,10 +40,9 @@ fn run_draw(
     // Only update context if game-state has changed
     if draw_changed {
         draw_changed = false;
-        // Clear Window
-        ggez::graphics::clear(ctx, ggez::graphics::BLACK);
 
-        state.draw(ctx)?;
+        // Let render target call draw on state
+        state.render_target.draw(state, ctx)?;
     } else {
         // Give CPU room to breathe
         std::thread::yield_now();
@@ -64,6 +63,8 @@ pub fn run(
 ) -> GameResult {
     let mut changed = false;
 
+    ggez::graphics::set_default_filter(ctx, ggez::graphics::FilterMode::Nearest);
+
     while ctx.continuing {
         ctx.timer_context.tick();
 
@@ -76,12 +77,11 @@ pub fn run(
                 // TODO: Handle game error
             }
         });
+
         events::process_gamepad(ctx, &mut state)?;
 
         changed = run_update(ctx, &mut state, changed)?;
         changed = run_draw(ctx, &state, changed)?;
-
-        ggez::graphics::present(ctx)?
     }
 
     Ok(())
