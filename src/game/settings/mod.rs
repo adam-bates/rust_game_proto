@@ -20,14 +20,14 @@ fn set_window_to_half_resolution(
     user_settings: &mut Settings,
 ) -> GameResult {
     let window = ggez::graphics::window(ctx);
-    let monitor = window.get_current_monitor();
-    let monitor_dimensions = monitor.get_dimensions();
+    let monitor = window.current_monitor().unwrap(); // TODO
+    let monitor_dimensions = monitor.size();
 
-    let hidpi_factor = monitor.get_hidpi_factor();
+    let hidpi_factor = monitor.scale_factor();
 
     let max_resolution = (
-        (monitor_dimensions.width / hidpi_factor) as f32,
-        (monitor_dimensions.height / hidpi_factor) as f32,
+        (monitor_dimensions.width as f64 / hidpi_factor) as f32,
+        (monitor_dimensions.height as f64 / hidpi_factor) as f32,
     );
 
     user_settings.video_settings.windowed_width = (max_resolution.0 / 2.) as usize;

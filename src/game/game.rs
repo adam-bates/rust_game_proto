@@ -6,13 +6,13 @@ use super::settings;
 
 pub fn run_game(mut fs: ggez::filesystem::Filesystem) -> types::GameResult {
     let (mut user_settings, first_load) = settings::find_or_default_for_user(&mut fs)?;
-    let (ctx, events_loop) = &mut context::new_context(fs, &user_settings)?;
+    let (mut ctx, events_loop) = context::new_context(fs, &user_settings)?;
 
     if first_load {
-        settings::initialize_first_load(ctx, &mut user_settings)?;
+        settings::initialize_first_load(&mut ctx, &mut user_settings)?;
     }
 
-    let state = game_state::MainState::new(ctx, user_settings)?;
+    let state = game_state::MainState::new(&mut ctx, user_settings)?;
 
     let _w = specs::World::default();
 

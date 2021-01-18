@@ -5,13 +5,13 @@ pub fn process_gamepad(ctx: &mut ggez::Context, state: &mut game_state::MainStat
     while let Some(gilrs::Event { id, event, .. }) = ctx.gamepad_context.next_event() {
         match event {
             gilrs::EventType::ButtonPressed(button, _) => {
-                state.gamepad_button_down_event(ctx, button, GamepadId(id));
+                state.gamepad_button_down_event(ctx, button, GamepadId(id))?;
             }
             gilrs::EventType::ButtonReleased(button, _) => {
-                state.gamepad_button_up_event(ctx, button, GamepadId(id));
+                state.gamepad_button_up_event(ctx, button, GamepadId(id))?;
             }
             gilrs::EventType::AxisChanged(axis, value, _) => {
-                state.gamepad_axis_event(ctx, axis, value, GamepadId(id));
+                state.gamepad_axis_event(ctx, axis, value, GamepadId(id))?;
             }
             gilrs::EventType::ButtonRepeated(_, _) => {}
             gilrs::EventType::ButtonChanged(_, _, _) => {}

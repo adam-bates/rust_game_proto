@@ -1,5 +1,6 @@
 mod context;
 mod events;
+mod input;
 mod game;
 mod game_loop;
 mod game_state;

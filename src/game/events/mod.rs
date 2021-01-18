@@ -1,16 +1,13 @@
 mod gilrs_events;
 mod winit_events;
 
-use super::{error::types::GameResult, game_state};
+use super::{config, error::types::GameResult, game_state};
 use ggez::{
-    input::{
-        gamepad::GamepadId,
-        keyboard::{KeyCode, KeyMods},
-    },
+    event::winit_event::{Event, MouseButton},
+    input::{gamepad::GamepadId, keyboard::KeyCode},
     Context,
 };
 use gilrs::ev::{Axis, Button};
-use winit::{Event, MouseButton};
 
 pub trait EventHandler {
     fn update(&mut self, ctx: &mut Context) -> GameResult;
@@ -51,26 +48,11 @@ pub trait EventHandler {
         Ok(())
     }
 
-    fn key_down_event(
-        &mut self,
-        ctx: &mut Context,
-        keycode: KeyCode,
-        _keymods: KeyMods,
-        _repeat: bool,
-    ) -> GameResult {
-        println!("{:?}", keycode);
-        if keycode == KeyCode::Escape {
-            ggez::event::quit(ctx);
-        }
+    fn key_down_event(&mut self, _ctx: &mut Context, _keycode: KeyCode) -> GameResult {
         Ok(())
     }
 
-    fn key_up_event(
-        &mut self,
-        _ctx: &mut Context,
-        _keycode: KeyCode,
-        _keymods: KeyMods,
-    ) -> GameResult {
+    fn key_up_event(&mut self, _ctx: &mut Context, _keycode: KeyCode) -> GameResult {
         Ok(())
     }
 
@@ -118,9 +100,10 @@ pub trait EventHandler {
 pub fn process_event(
     ctx: &mut ggez::Context,
     state: &mut game_state::MainState,
-    event: Event,
+    event: Event<()>,
+    state_changed: &mut bool,
 ) -> GameResult {
-    winit_events::process_event(ctx, state, event)
+    winit_events::process_event(ctx, state, event, state_changed)
 }
 
 pub fn process_gamepad(ctx: &mut ggez::Context, state: &mut game_state::MainState) -> GameResult {

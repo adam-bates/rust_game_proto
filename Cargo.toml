@@ -20,8 +20,8 @@ specs-derive = "~0.4.1"
 ggez = { path = "../ggez" }
 
 # Needs to be compatible with ggez
-winit = "~0.19.3"
-gilrs = "~0.7.0"
+winit = "~0.24.0"
+gilrs = "~0.8.0"
 
 chrono = "~0.4.19"
 

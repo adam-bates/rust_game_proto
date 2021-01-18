@@ -12,11 +12,11 @@ pub enum AspectRatio {
     #[serde(rename = "16:9")]
     Ratio16By9,
 
-    #[serde(rename = "15:9")]
-    Ratio15By9,
-
     #[serde(rename = "4:3")]
     Ratio4By3,
+
+    #[serde(rename = "pixel_perfect")]
+    PixelPerfect,
 }
 
 // Resolution, window-mode (fullscreen, windowed, windowed-fullscreen), aspect ratio, color-blind mode
@@ -109,6 +109,7 @@ impl Into<ggez::conf::WindowMode> for &Settings {
             max_width: 0.,
             max_height: 0.,
             resizable: true,
+            visible: true,
         }
     }
 }
@@ -118,8 +119,8 @@ impl Into<ggez::conf::WindowSetup> for &Settings {
         ggez::conf::WindowSetup {
             vsync: self.video_settings.vsync,
             srgb: self.video_settings.srgb,
-            title: "TITLE".to_string(), // TODO: config::APPLICATION_NAME
-            icon: "".to_string(),       // TODO
+            title: config::APPLICATION_NAME.to_string(),
+            icon: "/background_pallet_town.png".to_string(), // TODO
             samples: ggez::conf::NumSamples::Zero,
         }
     }

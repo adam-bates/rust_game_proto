@@ -57,31 +57,36 @@ fn run_draw(
 
 // Main game loop
 pub fn run(
-    ctx: &mut ggez::Context,
-    events_loop: &mut ggez::event::EventsLoop,
+    mut ctx: ggez::Context,
+    event_loop: ggez::event::EventLoop<()>,
     mut state: game_state::MainState,
 ) -> GameResult {
-    let mut changed = false;
+    let mut state_changed = false;
 
-    ggez::graphics::set_default_filter(ctx, ggez::graphics::FilterMode::Nearest);
+    ggez::graphics::set_default_filter(&mut ctx, ggez::graphics::FilterMode::Nearest);
 
     while ctx.continuing {
         ctx.timer_context.tick();
 
-        events_loop.poll_events(|event| {
+        event_loop.run(move |event, _, control_flow| {
+            if !ctx.continuing {
+                *control_flow = winit::event_loop::ControlFlow::Exit;
+                return;
+            }
+
+            *control_flow = winit::event_loop::ControlFlow::Poll;
+
+            let ctx = &mut ctx;
+            let state = &mut state;
+
             // Don't need this call as it unnecessarily clones the event,
-            // So I moved all the logic into our event processing
+            // So I moved all the logic into our event processing...
             // ctx.process_event(&event);
 
-            if let Err(_) = events::process_event(ctx, &mut state, event) {
+            if let Err(_) = events::process_event(ctx, state, event, &mut state_changed) {
                 // TODO: Handle game error
             }
         });
-
-        events::process_gamepad(ctx, &mut state)?;
-
-        changed = run_update(ctx, &mut state, changed)?;
-        changed = run_draw(ctx, &state, changed)?;
     }
 
     Ok(())
