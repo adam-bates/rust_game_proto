@@ -5,6 +5,7 @@ mod game_loop;
 mod game_state;
 mod input;
 mod render;
+mod scenes;
 mod settings;
 
 use super::{config, error, filesystem};

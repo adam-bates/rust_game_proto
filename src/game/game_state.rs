@@ -3,6 +3,7 @@ use super::{
     error::types::GameResult,
     events, input,
     render::target::{CanvasRenderTarget, RenderTarget, WindowRenderTarget},
+    scenes::SceneStack,
     settings::{AspectRatio, Settings},
 };
 
@@ -20,9 +21,10 @@ pub struct RenderState {
 }
 
 pub struct MainState {
-    pub settings: Settings,
+    pub scene_stack: SceneStack,
     pub input_state: InputState,
     pub render_state: RenderState,
+    pub settings: Settings,
 }
 
 impl MainState {
@@ -53,9 +55,10 @@ impl MainState {
         };
 
         Ok(Self {
-            settings,
-            render_state,
+            scene_stack: SceneStack, // TODO
             input_state: InputState::default(),
+            render_state,
+            settings,
         })
     }
 
