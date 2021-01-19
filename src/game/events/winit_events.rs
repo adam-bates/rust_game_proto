@@ -47,12 +47,14 @@ fn process_window_event(
             ..
         } => match element_state {
             ggez::event::winit_event::ElementState::Pressed => {
+                let is_repeat = ctx.keyboard_context.is_key_pressed(keycode);
+
                 // From ctx.process_event(&event)
                 {
                     ctx.keyboard_context.set_key(keycode, true);
                 }
 
-                if !keyboard::is_key_repeated(ctx) {
+                if !is_repeat {
                     state.key_down_event(ctx, keycode)?;
                 }
             }

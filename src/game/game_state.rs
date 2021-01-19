@@ -149,7 +149,7 @@ impl events::EventHandler for MainState {
     fn update(&mut self, ctx: &mut ggez::Context) -> GameResult {
         // TODO: Update game using scene manager
         if ggez::timer::ticks(ctx) % 100 == 0 {
-            println!("Direction: {:?}", self.input_state.requested_direction);
+            // println!("Direction: {:?}", self.input_state.requested_direction);
         }
         Ok(())
     }
@@ -257,7 +257,7 @@ impl events::EventHandler for MainState {
                 // ggez::event::KeyCode::S => self.settings.save(),
                 _ => {}
             }
-        } else if let Some(game_input) = input::GameInput::from_keycode(&keycode) {
+        } else if let Some(game_input) = input::GameInput::from_keycode(&keycode, true) {
             println!("{:?}", game_input);
 
             if let Some(direction) = game_input.to_direction() {
@@ -273,8 +273,9 @@ impl events::EventHandler for MainState {
         _ctx: &mut ggez::Context,
         keycode: ggez::input::keyboard::KeyCode,
     ) -> GameResult {
-        if let Some(current_direction) = &self.input_state.requested_direction {
-            if let Some(game_input) = input::GameInput::from_keycode(&keycode) {
+        if let Some(game_input) = input::GameInput::from_keycode(&keycode, false) {
+            println!("{:?}", game_input);
+            if let Some(current_direction) = &self.input_state.requested_direction {
                 if let Some(direction) = game_input.to_direction() {
                     if *current_direction == direction {
                         self.input_state.requested_direction = None;
