@@ -91,8 +91,8 @@ fn process_window_event(
             }
 
             let position = mouse::position(ctx);
-            let coord_x = config::VIEWPORT_TILES_WIDTH_F32 * position.x / state.window_coords.w;
-            let coord_y = config::VIEWPORT_TILES_HEIGHT_F32 * position.y / state.window_coords.h;
+            let coord_x = config::VIEWPORT_TILES_WIDTH_F32 * position.x / state.render_state.window_coords.w;
+            let coord_y = config::VIEWPORT_TILES_HEIGHT_F32 * position.y / state.render_state.window_coords.h;
 
             match element_state {
                 ElementState::Pressed => {
@@ -180,7 +180,7 @@ fn run_draw(
         draw_changed = false;
 
         // Let render target call draw on state
-        state.render_target.draw(state, ctx)?;
+        state.render_state.render_target.draw(state, ctx)?;
     } else {
         // Give CPU room to breathe
         std::thread::yield_now();

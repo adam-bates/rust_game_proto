@@ -33,13 +33,13 @@ impl RenderTarget for CanvasRenderTarget {
         graphics::set_canvas(ctx, Some(&self.canvas));
 
         // Draw graphics at canvas resolution
-        graphics::set_screen_coordinates(ctx, state.screen_coords)?;
+        graphics::set_screen_coordinates(ctx, state.render_state.screen_coords)?;
 
         state.draw(ctx)?;
 
         // Start drawing to window
         graphics::set_canvas(ctx, None);
-        graphics::set_screen_coordinates(ctx, state.window_coords)?;
+        graphics::set_screen_coordinates(ctx, state.render_state.window_coords)?;
 
         // Draw canvas onto window
         self.canvas.draw(ctx, self.canvas_param)?;

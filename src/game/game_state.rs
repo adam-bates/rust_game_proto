@@ -12,13 +12,17 @@ pub struct InputState {
     axis_vector: (f32, f32),
 }
 
-pub struct MainState {
-    pub settings: Settings,
-    pub input_state: InputState,
+pub struct RenderState {
     pub render_target: Box<dyn RenderTarget>,
     pub screen_coords: ggez::graphics::Rect,
     pub window_coords: ggez::graphics::Rect,
     pub window_color_format: ggez::graphics::Format,
+}
+
+pub struct MainState {
+    pub settings: Settings,
+    pub input_state: InputState,
+    pub render_state: RenderState,
 }
 
 impl MainState {
@@ -41,13 +45,17 @@ impl MainState {
             settings.video_settings.windowed_height as f32,
         );
 
-        Ok(Self {
-            settings,
+        let render_state = RenderState {
             render_target,
             screen_coords,
             window_coords,
-            input_state: InputState::default(),
             window_color_format: ggez::graphics::get_window_color_format(ctx),
+        };
+
+        Ok(Self {
+            settings,
+            render_state,
+            input_state: InputState::default(),
         })
     }
 
@@ -57,20 +65,35 @@ impl MainState {
                 const RATIO_16_9: f32 = 16. / 9.;
                 const RATIO_9_16: f32 = 9. / 16.;
 
-                if self.window_coords.w / self.window_coords.h < RATIO_16_9 {
-                    (self.window_coords.w, self.window_coords.w * RATIO_9_16)
+                if self.render_state.window_coords.w / self.render_state.window_coords.h
+                    < RATIO_16_9
+                {
+                    (
+                        self.render_state.window_coords.w,
+                        self.render_state.window_coords.w * RATIO_9_16,
+                    )
                 } else {
-                    (self.window_coords.h * RATIO_16_9, self.window_coords.h)
+                    (
+                        self.render_state.window_coords.h * RATIO_16_9,
+                        self.render_state.window_coords.h,
+                    )
                 }
             }
             AspectRatio::Ratio4By3 => {
                 const RATIO_4_3: f32 = 4. / 3.;
                 const RATIO_3_4: f32 = 3. / 4.;
 
-                if self.window_coords.w / self.window_coords.h < RATIO_4_3 {
-                    (self.window_coords.w, self.window_coords.w * RATIO_3_4)
+                if self.render_state.window_coords.w / self.render_state.window_coords.h < RATIO_4_3
+                {
+                    (
+                        self.render_state.window_coords.w,
+                        self.render_state.window_coords.w * RATIO_3_4,
+                    )
                 } else {
-                    (self.window_coords.h * RATIO_4_3, self.window_coords.h)
+                    (
+                        self.render_state.window_coords.h * RATIO_4_3,
+                        self.render_state.window_coords.h,
+                    )
                 }
             }
             AspectRatio::PixelPerfect => {
@@ -79,18 +102,25 @@ impl MainState {
                 const RATIO_H_W: f32 =
                     config::VIEWPORT_TILES_HEIGHT_F32 / config::VIEWPORT_TILES_WIDTH_F32;
 
-                if self.window_coords.w / self.window_coords.h < RATIO_W_H {
-                    (self.window_coords.w, self.window_coords.w * RATIO_H_W)
+                if self.render_state.window_coords.w / self.render_state.window_coords.h < RATIO_W_H
+                {
+                    (
+                        self.render_state.window_coords.w,
+                        self.render_state.window_coords.w * RATIO_H_W,
+                    )
                 } else {
-                    (self.window_coords.h * RATIO_W_H, self.window_coords.h)
+                    (
+                        self.render_state.window_coords.h * RATIO_W_H,
+                        self.render_state.window_coords.h,
+                    )
                 }
             }
             // Don't render canvas if stretched aspect
             AspectRatio::Stretch => {
-                if !self.render_target.is_window() {
-                    self.render_target = Box::new(WindowRenderTarget);
+                if !self.render_state.render_target.is_window() {
+                    self.render_state.render_target = Box::new(WindowRenderTarget);
                     // Draw graphics at canvas resolution
-                    ggez::graphics::set_screen_coordinates(ctx, self.screen_coords)?;
+                    ggez::graphics::set_screen_coordinates(ctx, self.render_state.screen_coords)?;
                 }
 
                 return Ok(());
@@ -102,15 +132,15 @@ impl MainState {
             canvas_width as u16,
             canvas_height as u16,
             ggez::conf::NumSamples::One,
-            self.window_color_format,
+            self.render_state.window_color_format,
         )?;
 
         let canvas_param = ggez::graphics::DrawParam::default().dest([
-            (self.window_coords.w - canvas_width) / 2.,
-            (self.window_coords.h - canvas_height) / 2.,
+            (self.render_state.window_coords.w - canvas_width) / 2.,
+            (self.render_state.window_coords.h - canvas_height) / 2.,
         ]);
 
-        self.render_target = Box::new(CanvasRenderTarget {
+        self.render_state.render_target = Box::new(CanvasRenderTarget {
             canvas,
             canvas_param,
         });
@@ -226,7 +256,7 @@ impl events::EventHandler for MainState {
             self.settings.video_settings.windowed_height = height as usize;
         }
 
-        self.window_coords = ggez::graphics::Rect::new(0.0, 0.0, width, height);
+        self.render_state.window_coords = ggez::graphics::Rect::new(0.0, 0.0, width, height);
 
         self.update_render_target(ctx)
     }
