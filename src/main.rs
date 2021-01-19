@@ -13,8 +13,10 @@ fn main() -> Result {
     // Setup logger
     let log_opts = config::log::setup(&mut fs)?;
 
+    let internal_error_handler = Box::new(|e| error::handle_game_err(e).unwrap());
+
     // Run game
-    game::run_game(fs).or_else(error::handle_game_err)?;
+    game::run_game(fs, internal_error_handler).or_else(error::handle_game_err)?;
 
     // Clean up logger
     config::log::clean_up(log_opts)
