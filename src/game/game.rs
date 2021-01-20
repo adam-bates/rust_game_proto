@@ -15,7 +15,7 @@ pub fn run_game(
         settings::initialize_first_load(&mut ctx, &mut user_settings)?;
     }
 
-    let state = game_state::MainState::new(&mut ctx, user_settings)?;
+    let state = game_state::GlobalState::new(&mut ctx, user_settings)?;
 
     let _w = specs::World::default();
 

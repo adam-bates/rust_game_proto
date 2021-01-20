@@ -3,13 +3,13 @@ use super::{
     error::types::GameResult,
     events, input,
     render::target::{CanvasRenderTarget, RenderTarget, WindowRenderTarget},
-    scenes::SceneStack,
+    scenes::types::SceneManager,
     settings::{AspectRatio, Settings},
 };
 
 #[derive(Default)]
 pub struct InputState {
-    requested_direction: Option<input::Direction>,
+    requested_direction: Option<input::GameDirection>,
     axis_vector: (f32, f32),
 }
 
@@ -20,14 +20,18 @@ pub struct RenderState {
     pub window_color_format: ggez::graphics::Format,
 }
 
-pub struct MainState {
-    pub scene_stack: SceneStack,
+pub struct GameState {
     pub input_state: InputState,
     pub render_state: RenderState,
     pub settings: Settings,
 }
 
-impl MainState {
+pub struct GlobalState {
+    pub scene_manager: SceneManager,
+    pub game_state: GameState,
+}
+
+impl GlobalState {
     pub fn new(ctx: &mut ggez::Context, settings: Settings) -> GameResult<Self> {
         let render_target = Box::new(WindowRenderTarget);
 
@@ -54,96 +58,109 @@ impl MainState {
             window_color_format: ggez::graphics::get_window_color_format(ctx),
         };
 
-        Ok(Self {
-            scene_stack: SceneStack, // TODO
+        let game_state = GameState {
             input_state: InputState::default(),
             render_state,
             settings,
+        };
+
+        Ok(Self {
+            scene_manager: SceneManager {}, // TODO
+            game_state,
         })
     }
 
     pub fn update_render_target(&mut self, ctx: &mut ggez::Context) -> GameResult {
-        let (canvas_width, canvas_height) = match self.settings.video_settings.aspect_ratio {
-            AspectRatio::Ratio16By9 => {
-                const RATIO_16_9: f32 = 16. / 9.;
-                const RATIO_9_16: f32 = 9. / 16.;
+        let (canvas_width, canvas_height) =
+            match self.game_state.settings.video_settings.aspect_ratio {
+                AspectRatio::Ratio16By9 => {
+                    const RATIO_16_9: f32 = 16. / 9.;
+                    const RATIO_9_16: f32 = 9. / 16.;
 
-                if self.render_state.window_coords.w / self.render_state.window_coords.h
-                    < RATIO_16_9
-                {
-                    (
-                        self.render_state.window_coords.w,
-                        self.render_state.window_coords.w * RATIO_9_16,
-                    )
-                } else {
-                    (
-                        self.render_state.window_coords.h * RATIO_16_9,
-                        self.render_state.window_coords.h,
-                    )
+                    if self.game_state.render_state.window_coords.w
+                        / self.game_state.render_state.window_coords.h
+                        < RATIO_16_9
+                    {
+                        (
+                            self.game_state.render_state.window_coords.w,
+                            self.game_state.render_state.window_coords.w * RATIO_9_16,
+                        )
+                    } else {
+                        (
+                            self.game_state.render_state.window_coords.h * RATIO_16_9,
+                            self.game_state.render_state.window_coords.h,
+                        )
+                    }
                 }
-            }
-            AspectRatio::Ratio4By3 => {
-                const RATIO_4_3: f32 = 4. / 3.;
-                const RATIO_3_4: f32 = 3. / 4.;
+                AspectRatio::Ratio4By3 => {
+                    const RATIO_4_3: f32 = 4. / 3.;
+                    const RATIO_3_4: f32 = 3. / 4.;
 
-                if self.render_state.window_coords.w / self.render_state.window_coords.h < RATIO_4_3
-                {
-                    (
-                        self.render_state.window_coords.w,
-                        self.render_state.window_coords.w * RATIO_3_4,
-                    )
-                } else {
-                    (
-                        self.render_state.window_coords.h * RATIO_4_3,
-                        self.render_state.window_coords.h,
-                    )
+                    if self.game_state.render_state.window_coords.w
+                        / self.game_state.render_state.window_coords.h
+                        < RATIO_4_3
+                    {
+                        (
+                            self.game_state.render_state.window_coords.w,
+                            self.game_state.render_state.window_coords.w * RATIO_3_4,
+                        )
+                    } else {
+                        (
+                            self.game_state.render_state.window_coords.h * RATIO_4_3,
+                            self.game_state.render_state.window_coords.h,
+                        )
+                    }
                 }
-            }
-            AspectRatio::PixelPerfect => {
-                const RATIO_W_H: f32 =
-                    config::VIEWPORT_TILES_WIDTH_F32 / config::VIEWPORT_TILES_HEIGHT_F32;
-                const RATIO_H_W: f32 =
-                    config::VIEWPORT_TILES_HEIGHT_F32 / config::VIEWPORT_TILES_WIDTH_F32;
+                AspectRatio::PixelPerfect => {
+                    const RATIO_W_H: f32 =
+                        config::VIEWPORT_TILES_WIDTH_F32 / config::VIEWPORT_TILES_HEIGHT_F32;
+                    const RATIO_H_W: f32 =
+                        config::VIEWPORT_TILES_HEIGHT_F32 / config::VIEWPORT_TILES_WIDTH_F32;
 
-                if self.render_state.window_coords.w / self.render_state.window_coords.h < RATIO_W_H
-                {
-                    (
-                        self.render_state.window_coords.w,
-                        self.render_state.window_coords.w * RATIO_H_W,
-                    )
-                } else {
-                    (
-                        self.render_state.window_coords.h * RATIO_W_H,
-                        self.render_state.window_coords.h,
-                    )
+                    if self.game_state.render_state.window_coords.w
+                        / self.game_state.render_state.window_coords.h
+                        < RATIO_W_H
+                    {
+                        (
+                            self.game_state.render_state.window_coords.w,
+                            self.game_state.render_state.window_coords.w * RATIO_H_W,
+                        )
+                    } else {
+                        (
+                            self.game_state.render_state.window_coords.h * RATIO_W_H,
+                            self.game_state.render_state.window_coords.h,
+                        )
+                    }
                 }
-            }
-            // Don't render canvas if stretched aspect
-            AspectRatio::Stretch => {
-                if !self.render_state.render_target.is_window() {
-                    self.render_state.render_target = Box::new(WindowRenderTarget);
-                    // Draw graphics at canvas resolution
-                    ggez::graphics::set_screen_coordinates(ctx, self.render_state.screen_coords)?;
-                }
+                // Don't render canvas if stretched aspect
+                AspectRatio::Stretch => {
+                    if !self.game_state.render_state.render_target.is_window() {
+                        self.game_state.render_state.render_target = Box::new(WindowRenderTarget);
+                        // Draw graphics at canvas resolution
+                        ggez::graphics::set_screen_coordinates(
+                            ctx,
+                            self.game_state.render_state.screen_coords,
+                        )?;
+                    }
 
-                return Ok(());
-            }
-        };
+                    return Ok(());
+                }
+            };
 
         let canvas = ggez::graphics::Canvas::new(
             ctx,
             canvas_width as u16,
             canvas_height as u16,
             ggez::conf::NumSamples::One,
-            self.render_state.window_color_format,
+            self.game_state.render_state.window_color_format,
         )?;
 
         let canvas_param = ggez::graphics::DrawParam::default().dest([
-            (self.render_state.window_coords.w - canvas_width) / 2.,
-            (self.render_state.window_coords.h - canvas_height) / 2.,
+            (self.game_state.render_state.window_coords.w - canvas_width) / 2.,
+            (self.game_state.render_state.window_coords.h - canvas_height) / 2.,
         ]);
 
-        self.render_state.render_target = Box::new(CanvasRenderTarget {
+        self.game_state.render_state.render_target = Box::new(CanvasRenderTarget {
             canvas,
             canvas_param,
         });
@@ -152,20 +169,20 @@ impl MainState {
     }
 
     fn toggle_fullscreen(&mut self, ctx: &mut ggez::Context) -> GameResult {
-        let fullscreen_type = match self.settings.video_settings.fullscreen_type {
+        let fullscreen_type = match self.game_state.settings.video_settings.fullscreen_type {
             ggez::conf::FullscreenType::Windowed => ggez::conf::FullscreenType::Desktop,
             ggez::conf::FullscreenType::Desktop => ggez::conf::FullscreenType::True,
             ggez::conf::FullscreenType::True => ggez::conf::FullscreenType::Windowed,
         };
 
-        self.settings.video_settings.fullscreen_type = fullscreen_type;
-        ggez::graphics::set_mode(ctx, (&self.settings).into())?;
+        self.game_state.settings.video_settings.fullscreen_type = fullscreen_type;
+        ggez::graphics::set_mode(ctx, (&self.game_state.settings).into())?;
 
         if fullscreen_type == ggez::conf::FullscreenType::Windowed {
             ggez::graphics::set_drawable_size(
                 ctx,
-                self.settings.video_settings.windowed_width as f32,
-                self.settings.video_settings.windowed_height as f32,
+                self.game_state.settings.video_settings.windowed_width as f32,
+                self.game_state.settings.video_settings.windowed_height as f32,
             )?;
         }
 
@@ -178,7 +195,7 @@ impl MainState {
     }
 }
 
-impl events::EventHandler for MainState {
+impl events::EventHandler for GlobalState {
     fn update(&mut self, ctx: &mut ggez::Context) -> GameResult {
         // TODO: Update game using scene manager
         if ggez::timer::ticks(ctx) % 100 == 0 {
@@ -198,8 +215,8 @@ impl events::EventHandler for MainState {
             ggez::graphics::Color::from_rgb(255, 50, 50),
         )?;
 
-        let x = -1. * self.input_state.axis_vector.0;
-        let y = -1. * self.input_state.axis_vector.1;
+        let x = -1. * self.game_state.input_state.axis_vector.0;
+        let y = -1. * self.game_state.input_state.axis_vector.1;
 
         ggez::graphics::draw(
             ctx,
@@ -254,12 +271,15 @@ impl events::EventHandler for MainState {
     }
 
     fn resize_event(&mut self, ctx: &mut ggez::Context, width: f32, height: f32) -> GameResult {
-        if self.settings.video_settings.fullscreen_type == ggez::conf::FullscreenType::Windowed {
-            self.settings.video_settings.windowed_width = width as usize;
-            self.settings.video_settings.windowed_height = height as usize;
+        if self.game_state.settings.video_settings.fullscreen_type
+            == ggez::conf::FullscreenType::Windowed
+        {
+            self.game_state.settings.video_settings.windowed_width = width as usize;
+            self.game_state.settings.video_settings.windowed_height = height as usize;
         }
 
-        self.render_state.window_coords = ggez::graphics::Rect::new(0.0, 0.0, width, height);
+        self.game_state.render_state.window_coords =
+            ggez::graphics::Rect::new(0.0, 0.0, width, height);
 
         self.update_render_target(ctx)
     }
@@ -274,8 +294,8 @@ impl events::EventHandler for MainState {
                 ggez::input::keyboard::KeyCode::Q => ggez::event::quit(ctx),
                 ggez::input::keyboard::KeyCode::F => self.toggle_fullscreen(ctx)?,
                 ggez::input::keyboard::KeyCode::A => {
-                    self.settings.video_settings.aspect_ratio =
-                        match self.settings.video_settings.aspect_ratio {
+                    self.game_state.settings.video_settings.aspect_ratio =
+                        match self.game_state.settings.video_settings.aspect_ratio {
                             AspectRatio::Ratio16By9 => AspectRatio::Ratio4By3,
                             AspectRatio::Ratio4By3 => AspectRatio::PixelPerfect,
                             AspectRatio::PixelPerfect => AspectRatio::Stretch,
@@ -283,7 +303,7 @@ impl events::EventHandler for MainState {
                         };
                     println!(
                         "Set aspect ratio: {:?}",
-                        self.settings.video_settings.aspect_ratio
+                        self.game_state.settings.video_settings.aspect_ratio
                     );
                     self.update_render_target(ctx)?;
                 }
@@ -293,8 +313,8 @@ impl events::EventHandler for MainState {
         } else if let Some(game_input) = input::GameInput::from_keycode(&keycode, true) {
             println!("{:?}", game_input);
 
-            if let Some(direction) = game_input.to_direction() {
-                self.input_state.requested_direction = Some(direction);
+            if let Some(direction) = game_input.to_game_direction() {
+                self.game_state.input_state.requested_direction = direction;
             }
         }
 
@@ -308,11 +328,9 @@ impl events::EventHandler for MainState {
     ) -> GameResult {
         if let Some(game_input) = input::GameInput::from_keycode(&keycode, false) {
             println!("{:?}", game_input);
-            if let Some(current_direction) = &self.input_state.requested_direction {
-                if let Some(direction) = game_input.to_direction() {
-                    if *current_direction == direction {
-                        self.input_state.requested_direction = None;
-                    }
+            if let Some(direction) = game_input.to_game_direction() {
+                if self.game_state.input_state.requested_direction == direction {
+                    self.game_state.input_state.requested_direction = None;
                 }
             }
         }
@@ -323,7 +341,7 @@ impl events::EventHandler for MainState {
     fn gamepad_axis_event(
         &mut self,
         _ctx: &mut ggez::Context,
-        axis: gilrs::ev::Axis,
+        axis: gilrs::Axis,
         value: f32,
         _id: ggez::input::gamepad::GamepadId,
     ) -> GameResult {
@@ -331,28 +349,30 @@ impl events::EventHandler for MainState {
 
         match axis {
             gilrs::ev::Axis::LeftStickY => {
-                self.input_state.axis_vector.1 = value;
+                self.game_state.input_state.axis_vector.1 = value;
             }
             gilrs::ev::Axis::LeftStickX => {
-                self.input_state.axis_vector.0 = value;
+                self.game_state.input_state.axis_vector.0 = value;
             }
             _ => return Ok(()),
         }
 
         let length = self
+            .game_state
             .input_state
             .axis_vector
             .0
-            .hypot(self.input_state.axis_vector.1);
+            .hypot(self.game_state.input_state.axis_vector.1);
 
         if length < DEADZONE {
-            self.input_state.requested_direction = None;
+            self.game_state.input_state.requested_direction = None;
         } else {
             let angle = self
+                .game_state
                 .input_state
                 .axis_vector
                 .0
-                .atan2(self.input_state.axis_vector.1);
+                .atan2(self.game_state.input_state.axis_vector.1);
 
             // Left: -3PI/4 to -PI/4
             // Up: -PI/4 to PI/4
@@ -365,16 +385,16 @@ impl events::EventHandler for MainState {
             const POS_3_PI_BY_4: f32 = 3. * std::f32::consts::FRAC_PI_4;
 
             let direction = if NEG_3_PI_BY_4 < angle && angle <= NEG_PI_BY_4 {
-                input::Direction::Left
+                input::GameDirection::Left
             } else if NEG_PI_BY_4 < angle && angle <= POS_PI_BY_4 {
-                input::Direction::Up
+                input::GameDirection::Up
             } else if POS_PI_BY_4 < angle && angle <= POS_3_PI_BY_4 {
-                input::Direction::Right
+                input::GameDirection::Right
             } else {
-                input::Direction::Down
+                input::GameDirection::Down
             };
 
-            self.input_state.requested_direction = Some(direction);
+            self.game_state.input_state.requested_direction = Some(direction);
         }
 
         Ok(())

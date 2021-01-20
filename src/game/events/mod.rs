@@ -99,13 +99,13 @@ pub trait EventHandler {
 
 pub fn process_event(
     ctx: &mut ggez::Context,
-    state: &mut game_state::MainState,
+    state: &mut game_state::GlobalState,
     event: Event<()>,
     state_changed: &mut bool,
 ) -> GameResult {
     winit_events::process_event(ctx, state, event, state_changed)
 }
 
-pub fn process_gamepad(ctx: &mut ggez::Context, state: &mut game_state::MainState) -> GameResult {
+pub fn process_gamepad(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> GameResult {
     gilrs_events::process_gamepad(ctx, state)
 }

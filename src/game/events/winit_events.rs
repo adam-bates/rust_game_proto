@@ -12,7 +12,7 @@ use winit::dpi;
 
 fn process_window_event(
     ctx: &mut ggez::Context,
-    state: &mut game_state::MainState,
+    state: &mut game_state::GlobalState,
     event: WindowEvent,
 ) -> GameResult {
     match event {
@@ -91,8 +91,8 @@ fn process_window_event(
             }
 
             let position = mouse::position(ctx);
-            let coord_x = config::VIEWPORT_TILES_WIDTH_F32 * position.x / state.render_state.window_coords.w;
-            let coord_y = config::VIEWPORT_TILES_HEIGHT_F32 * position.y / state.render_state.window_coords.h;
+            let coord_x = config::VIEWPORT_TILES_WIDTH_F32 * position.x / state.game_state.render_state.window_coords.w;
+            let coord_y = config::VIEWPORT_TILES_HEIGHT_F32 * position.y / state.game_state.render_state.window_coords.h;
 
             match element_state {
                 ElementState::Pressed => {
@@ -128,7 +128,7 @@ fn process_window_event(
 
 fn process_device_event(
     ctx: &mut ggez::Context,
-    _state: &mut game_state::MainState,
+    _state: &mut game_state::GlobalState,
     event: DeviceEvent,
 ) -> GameResult {
     match event {
@@ -147,12 +147,12 @@ const EPSILON_DURATION: std::time::Duration = std::time::Duration::from_nanos(1)
 // Main update run
 fn run_update(
     ctx: &mut ggez::Context,
-    state: &mut game_state::MainState,
+    state: &mut game_state::GlobalState,
     state_changed: bool,
 ) -> GameResult<bool> {
     let mut update_changed = state_changed;
 
-    while ggez::timer::check_update_time(ctx, state.settings.video_settings.target_fps) {
+    while ggez::timer::check_update_time(ctx, state.game_state.settings.video_settings.target_fps) {
         update_changed = true;
         state.update(ctx)?;
     }
@@ -170,7 +170,7 @@ fn run_update(
 // Main draw run
 fn run_draw(
     ctx: &mut ggez::Context,
-    state: &game_state::MainState,
+    state: &game_state::GlobalState,
     state_changed: bool,
 ) -> GameResult<bool> {
     let mut draw_changed = state_changed;
@@ -180,7 +180,7 @@ fn run_draw(
         draw_changed = false;
 
         // Let render target call draw on state
-        state.render_state.render_target.draw(state, ctx)?;
+        state.game_state.render_state.render_target.draw(state, ctx)?;
     } else {
         // Give CPU room to breathe
         std::thread::yield_now();
@@ -195,7 +195,7 @@ fn run_draw(
 
 pub fn process_event(
     ctx: &mut ggez::Context,
-    state: &mut game_state::MainState,
+    state: &mut game_state::GlobalState,
     event: Event<()>,
     state_changed: &mut bool,
 ) -> GameResult {
