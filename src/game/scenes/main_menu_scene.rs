@@ -2,6 +2,7 @@ use super::{
     config,
     error::types::GameResult,
     game_state::GameState,
+    input::types::{GameButton, GameInput},
     types::{Scene, SceneSwitch},
 };
 
@@ -94,8 +95,19 @@ impl Scene for MainMenuScene {
         &mut self,
         game_state: &mut GameState,
         ctx: &mut ggez::Context,
-        input: crate::game::input::types::GameInput,
+        input: GameInput,
     ) -> GameResult<Option<SceneSwitch>> {
+        println!("input: {:?}", input);
+        if ggez::input::keyboard::is_mod_active(ctx, ggez::input::keyboard::KeyMods::CTRL) {
+            match input {
+                GameInput::Button { button, .. } => match button {
+                    GameButton::Select => return Ok(Some(SceneSwitch::Pop)),
+                    _ => {}
+                },
+                // ggez::event::KeyCode::S => self.settings.save(),
+                _ => {}
+            }
+        }
         Ok(None)
     }
 }

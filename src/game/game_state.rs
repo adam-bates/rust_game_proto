@@ -138,12 +138,6 @@ impl events::EventHandler for GlobalState {
                     self.scene_manager
                         .replace_top(ctx, Box::new(|ctx| Ok(Box::new(MainMenuScene::new(ctx)?))))?;
                 }
-                ggez::input::keyboard::KeyCode::N => {
-                    println!("Popping");
-                    if let Some(_) = self.scene_manager.pop(ctx) {
-                        println!("Popped old scene!");
-                    }
-                }
                 // ggez::event::KeyCode::S => self.settings.save(),
                 _ => {}
             }
