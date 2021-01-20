@@ -1,13 +1,14 @@
 use super::{error::types::GameResult, game_state::GameState, input::types::GameInput};
 
+pub type SceneBuilder = Box<dyn Fn(&mut ggez::Context) -> GameResult<Box<dyn Scene>>>;
+
 pub enum SceneSwitch {
     Pop,
-    Push(Box<dyn Scene>),
-    ReplaceTop(Box<dyn Scene>),
-    ReplaceAll(Box<dyn Scene>),
+    Push(SceneBuilder),
+    ReplaceTop(SceneBuilder),
+    ReplaceAll(SceneBuilder),
 }
 
-// Structs that impl Scene will hold state that is "local" to that scene
 pub trait Scene {
     fn update(
         &mut self,
@@ -57,47 +58,61 @@ impl SceneManager {
     pub fn replace_top(
         &mut self,
         ctx: &mut ggez::Context,
-        scene: Box<dyn Scene>,
-    ) -> Option<Box<dyn Scene>> {
-        let top = self.pop(ctx);
+        scene_builder: SceneBuilder,
+    ) -> GameResult {
+        {
+            let _ = self.pop(ctx);
+        }
+
+        let scene = scene_builder(ctx)?;
         self.push(ctx, scene);
-        top
+
+        Ok(())
     }
 
     pub fn unchecked_replace_top(
         &mut self,
         ctx: &mut ggez::Context,
-        scene: Box<dyn Scene>,
-    ) -> Box<dyn Scene> {
-        let top = self.unchecked_pop(ctx);
+        scene_builder: SceneBuilder,
+    ) -> GameResult {
+        {
+            let _ = self.unchecked_pop(ctx);
+        }
+
+        let scene = scene_builder(ctx)?;
         self.push(ctx, scene);
-        top
+
+        Ok(())
     }
 
     pub fn replace_all(
         &mut self,
         ctx: &mut ggez::Context,
-        scene: Box<dyn Scene>,
-    ) -> Option<Box<dyn Scene>> {
-        let mut last = None;
+        scene_builder: SceneBuilder,
+    ) -> GameResult {
         while self.current().is_some() {
-            last = self.pop(ctx);
+            let _ = self.pop(ctx);
         }
+
+        let scene = scene_builder(ctx)?;
         self.push(ctx, scene);
-        last
+
+        Ok(())
     }
 
     pub fn unchecked_replace_all(
         &mut self,
         ctx: &mut ggez::Context,
-        scene: Box<dyn Scene>,
-    ) -> Box<dyn Scene> {
-        let mut last = self.unchecked_pop(ctx);
+        scene_builder: SceneBuilder,
+    ) -> GameResult {
         while self.current().is_some() {
-            last = self.unchecked_pop(ctx);
+            let _ = self.unchecked_pop(ctx);
         }
+
+        let scene = scene_builder(ctx)?;
         self.push(ctx, scene);
-        last
+
+        Ok(())
     }
 
     pub fn current(&self) -> Option<&Box<dyn Scene>> {
@@ -114,35 +129,45 @@ impl SceneManager {
             .expect("Failed to get current scene from empty SceneManager::scene_stack")
     }
 
+    pub fn unchecked_current_mut(&mut self) -> &mut dyn Scene {
+        &mut **self
+            .current_mut()
+            .expect("Failed to get current scene from empty SceneManager::scene_stack")
+    }
+
     pub fn switch(
         &mut self,
         ctx: &mut ggez::Context,
         switch: SceneSwitch,
-    ) -> Option<Box<dyn Scene>> {
+    ) -> GameResult<Option<Box<dyn Scene>>> {
         match switch {
-            SceneSwitch::Pop => self.pop(ctx),
-            SceneSwitch::Push(new) => {
-                self.push(ctx, new);
-                None
+            SceneSwitch::Pop => return Ok(self.pop(ctx)),
+            SceneSwitch::Push(builder) => {
+                let new = builder(ctx)?;
+                self.push(ctx, new)
             }
-            SceneSwitch::ReplaceTop(new) => self.replace_top(ctx, new),
-            SceneSwitch::ReplaceAll(new) => self.replace_all(ctx, new),
-        }
+            SceneSwitch::ReplaceTop(builder) => self.replace_top(ctx, builder)?,
+            SceneSwitch::ReplaceAll(builder) => self.replace_all(ctx, builder)?,
+        };
+
+        Ok(None)
     }
 
     pub fn unchecked_switch(
         &mut self,
         ctx: &mut ggez::Context,
         switch: SceneSwitch,
-    ) -> Option<Box<dyn Scene>> {
+    ) -> GameResult<Option<Box<dyn Scene>>> {
         match switch {
-            SceneSwitch::Pop => Some(self.unchecked_pop(ctx)),
-            SceneSwitch::Push(new) => {
+            SceneSwitch::Pop => return Ok(Some(self.unchecked_pop(ctx))),
+            SceneSwitch::Push(builder) => {
+                let new = builder(ctx)?;
                 self.push(ctx, new);
-                None
             }
-            SceneSwitch::ReplaceTop(new) => Some(self.unchecked_replace_top(ctx, new)),
-            SceneSwitch::ReplaceAll(new) => Some(self.unchecked_replace_all(ctx, new)),
-        }
+            SceneSwitch::ReplaceTop(builder) => self.unchecked_replace_top(ctx, builder)?,
+            SceneSwitch::ReplaceAll(builder) => self.unchecked_replace_all(ctx, builder)?,
+        };
+
+        Ok(None)
     }
 }
