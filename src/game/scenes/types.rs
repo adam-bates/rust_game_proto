@@ -1,4 +1,6 @@
-use super::{error::types::GameResult, game_state::GameState, input::GameInput};
+use super::{
+    error::types::GameResult, game_state::GameState, input::types::GameInput, settings::Settings,
+};
 
 pub enum SceneSwitch {
     Pop,
@@ -34,4 +36,10 @@ pub trait Scene {
 
 pub struct SceneManager {
     //
+}
+
+impl SceneManager {
+    pub fn new(ctx: &mut ggez::Context, settings: &Settings) -> GameResult<Self> {
+        Ok(SceneManager {})
+    }
 }

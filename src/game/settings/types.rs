@@ -6,7 +6,6 @@ use toml;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum AspectRatio {
-    #[serde(rename = "stretch")]
     Stretch,
 
     #[serde(rename = "16:9")]
@@ -15,7 +14,7 @@ pub enum AspectRatio {
     #[serde(rename = "4:3")]
     Ratio4By3,
 
-    #[serde(rename = "pixel_perfect")]
+    #[serde(rename = "Pixel")]
     PixelPerfect,
 }
 
@@ -38,6 +37,27 @@ pub struct VideoSettings {
     // colour_blind_mode,
 }
 
+impl VideoSettings {
+    fn apply(&self, ctx: &mut ggez::Context) -> GameResult {
+        {
+            if self.fullscreen_type == ggez::conf::FullscreenType::Windowed {
+                ggez::graphics::set_drawable_size(
+                    ctx,
+                    self.windowed_width as f32,
+                    self.windowed_height as f32,
+                )?;
+            }
+
+            ggez::input::mouse::set_cursor_hidden(
+                ctx,
+                self.fullscreen_type == ggez::conf::FullscreenType::True,
+            );
+        }
+
+        Ok(())
+    }
+}
+
 impl Default for VideoSettings {
     fn default() -> Self {
         Self {
@@ -53,19 +73,40 @@ impl Default for VideoSettings {
 }
 
 // Controls (input mapping), locale, font, text-speed, ui-border-type
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GameSettings {
+    pub controller_stick_deadzone: f32,
     // input_mapping,
-// locale,
-// font,
-// text_speed,
-// ui_border_type,
+    // locale,
+    // font,
+    // text_speed,
+    // ui_border_type,
+}
+
+impl Default for GameSettings {
+    fn default() -> Self {
+        Self {
+            controller_stick_deadzone: 0.5,
+        }
+    }
+}
+
+impl GameSettings {
+    fn apply(&self, ctx: &mut ggez::Context) -> GameResult {
+        Ok(())
+    }
 }
 
 // Volumes, sound-accessibility
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct AudioSettings {
     // ...
+}
+
+impl AudioSettings {
+    fn apply(&self, ctx: &mut ggez::Context) -> GameResult {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -81,6 +122,18 @@ pub struct Settings {
 }
 
 impl Settings {
+    pub fn apply(&self, ctx: &mut ggez::Context) -> GameResult {
+        {
+            ggez::graphics::set_mode(ctx, self.into())?;
+        }
+
+        self.game_settings.apply(ctx)?;
+        self.video_settings.apply(ctx)?;
+        self.audio_settings.apply(ctx)?;
+
+        Ok(())
+    }
+
     pub fn from_toml_file<R: io::Read>(file: &mut R) -> GameResult<Self> {
         let mut encoded = String::new();
         file.read_to_string(&mut encoded)?;
