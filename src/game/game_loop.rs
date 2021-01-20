@@ -8,8 +8,6 @@ pub fn run(
     error_handler: Box<dyn Fn(ggez::GameError)>,
 ) {
     let mut state_changed = false;
-    ggez::graphics::set_default_filter(&mut ctx, ggez::graphics::FilterMode::Nearest);
-
     event_loop.run(move |event, _, control_flow| {
         let ctx = &mut ctx;
         let state = &mut state;

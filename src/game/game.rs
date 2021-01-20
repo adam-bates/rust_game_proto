@@ -17,8 +17,6 @@ pub fn run_game(
 
     let state = game_state::GlobalState::new(&mut ctx, user_settings)?;
 
-    let _w = specs::World::default();
-
     game_loop::run(ctx, events_loop, state, error_handler);
 
     Ok(())

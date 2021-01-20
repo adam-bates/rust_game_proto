@@ -14,6 +14,8 @@ pub struct RenderState {
 
 impl RenderState {
     pub fn new(ctx: &mut ggez::Context, settings: &Settings) -> GameResult<Self> {
+        ggez::graphics::set_default_filter(ctx, ggez::graphics::FilterMode::Nearest);
+
         let render_target = Box::new(WindowRenderTarget);
 
         let screen_coords = ggez::graphics::Rect::new(
@@ -39,11 +41,7 @@ impl RenderState {
         })
     }
 
-    pub fn refresh(
-        &mut self,
-        ctx: &mut ggez::Context,
-        aspect_ratio: &AspectRatio,
-    ) -> GameResult {
+    pub fn refresh(&mut self, ctx: &mut ggez::Context, aspect_ratio: &AspectRatio) -> GameResult {
         let (canvas_width, canvas_height) = match aspect_ratio {
             AspectRatio::Ratio16By9 => {
                 const RATIO_16_9: f32 = 16. / 9.;

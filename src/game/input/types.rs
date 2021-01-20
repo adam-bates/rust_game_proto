@@ -1,4 +1,5 @@
 use ggez::input::keyboard::KeyCode;
+use gilrs::Button;
 
 const NEG_3_PI_BY_4: f32 = -3. * std::f32::consts::FRAC_PI_4;
 const NEG_PI_BY_4: f32 = -1. * std::f32::consts::FRAC_PI_4;
@@ -60,6 +61,10 @@ impl GameInput {
             }),
             _ => None,
         }
+    }
+
+    pub fn from_gamepad_button(button: &Button, pressed: bool) -> Option<Self> {
+        None
     }
 
     pub fn from_gamepad_axes(axis_x: f32, axis_y: f32, deadzone: f32) -> Self {

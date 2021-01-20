@@ -1,6 +1,6 @@
+mod main_menu_scene;
 pub mod types;
 
-use super::error;
-use super::game_state;
-use super::input;
-use super::settings;
+pub use main_menu_scene::MainMenuScene;
+
+use super::{config, error, game_state, input, settings};
