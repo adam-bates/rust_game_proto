@@ -7,6 +7,7 @@ mod input;
 mod render;
 mod scenes;
 mod settings;
+mod world;
 
 use super::{config, error, filesystem};
 

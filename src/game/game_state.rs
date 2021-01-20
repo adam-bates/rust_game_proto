@@ -5,12 +5,17 @@ use super::{
     render::state::RenderState,
     scenes::{types::SceneManager, MainMenuScene},
     settings::{AspectRatio, Settings},
+    world,
 };
 
 #[derive(Default)]
 pub struct InputState {
-    pub gamepad_axis_x: f32,
-    pub gamepad_axis_y: f32,
+    // TODO: Do we need both?
+    // Could we do: gamepad_axis_x/y and set it to the configured stick?
+    pub gamepad_left_axis_x: f32,
+    pub gamepad_left_axis_y: f32,
+    pub gamepad_right_axis_x: f32,
+    pub gamepad_right_axis_y: f32,
 }
 
 pub struct GameState {
@@ -22,9 +27,8 @@ pub struct GameState {
 
 impl GameState {
     fn new(ctx: &mut ggez::Context, settings: Settings) -> GameResult<Self> {
-        let world = specs::World::default(); // TODO
         Ok(Self {
-            world,
+            world: world::create_world(),
             input_state: InputState::default(),
             render_state: RenderState::new(ctx, &settings)?,
             settings,
@@ -40,7 +44,8 @@ pub struct GlobalState {
 impl GlobalState {
     pub fn new(ctx: &mut ggez::Context, settings: Settings) -> GameResult<Self> {
         let mut scene_manager = SceneManager::default();
-        scene_manager.push(Box::new(MainMenuScene {}));
+        let initial_scene = Box::new(MainMenuScene::new(ctx)?);
+        scene_manager.push(ctx, initial_scene);
 
         let game_state = GameState::new(ctx, settings)?;
 
@@ -73,7 +78,7 @@ impl events::EventHandler for GlobalState {
     fn update(&mut self, ctx: &mut ggez::Context) -> GameResult {
         if let Some(scene) = self.scene_manager.current_mut() {
             if let Some(scene_switch) = scene.update(&mut self.game_state, ctx)? {
-                self.scene_manager.switch(scene_switch);
+                self.scene_manager.switch(ctx, scene_switch);
             }
         }
 
@@ -128,13 +133,26 @@ impl events::EventHandler for GlobalState {
                         .render_state
                         .refresh(ctx, &self.game_state.settings.video_settings.aspect_ratio)?;
                 }
+                ggez::input::keyboard::KeyCode::M => {
+                    println!("Replacing top");
+                    let new_scene = Box::new(MainMenuScene::new(ctx)?);
+                    if let Some(_) = self.scene_manager.replace_top(ctx, new_scene) {
+                        println!("Replaced old scene!");
+                    }
+                }
+                ggez::input::keyboard::KeyCode::N => {
+                    println!("Popping");
+                    if let Some(_) = self.scene_manager.pop(ctx) {
+                        println!("Popped old scene!");
+                    }
+                }
                 // ggez::event::KeyCode::S => self.settings.save(),
                 _ => {}
             }
         } else if let Some(game_input) = GameInput::from_keycode(&keycode, true) {
             if let Some(scene) = self.scene_manager.current_mut() {
                 if let Some(scene_switch) = scene.input(&mut self.game_state, ctx, game_input)? {
-                    self.scene_manager.switch(scene_switch);
+                    self.scene_manager.switch(ctx, scene_switch);
                 }
             }
         }
@@ -150,7 +168,7 @@ impl events::EventHandler for GlobalState {
         if let Some(game_input) = GameInput::from_keycode(&keycode, false) {
             if let Some(scene) = self.scene_manager.current_mut() {
                 if let Some(scene_switch) = scene.input(&mut self.game_state, ctx, game_input)? {
-                    self.scene_manager.switch(scene_switch);
+                    self.scene_manager.switch(ctx, scene_switch);
                 }
             }
         }
@@ -167,7 +185,7 @@ impl events::EventHandler for GlobalState {
         if let Some(game_input) = GameInput::from_gamepad_button(&btn, true) {
             if let Some(scene) = self.scene_manager.current_mut() {
                 if let Some(scene_switch) = scene.input(&mut self.game_state, ctx, game_input)? {
-                    self.scene_manager.switch(scene_switch);
+                    self.scene_manager.switch(ctx, scene_switch);
                 }
             }
         }
@@ -184,7 +202,7 @@ impl events::EventHandler for GlobalState {
         if let Some(game_input) = GameInput::from_gamepad_button(&btn, false) {
             if let Some(scene) = self.scene_manager.current_mut() {
                 if let Some(scene_switch) = scene.input(&mut self.game_state, ctx, game_input)? {
-                    self.scene_manager.switch(scene_switch);
+                    self.scene_manager.switch(ctx, scene_switch);
                 }
             }
         }
@@ -201,16 +219,22 @@ impl events::EventHandler for GlobalState {
     ) -> GameResult {
         match axis {
             gilrs::ev::Axis::LeftStickX => {
-                self.game_state.input_state.gamepad_axis_x = value;
+                self.game_state.input_state.gamepad_left_axis_x = value;
             }
             gilrs::ev::Axis::LeftStickY => {
-                self.game_state.input_state.gamepad_axis_y = value;
+                self.game_state.input_state.gamepad_left_axis_y = value;
+            }
+            gilrs::ev::Axis::RightStickX => {
+                self.game_state.input_state.gamepad_right_axis_x = value;
+            }
+            gilrs::ev::Axis::RightStickY => {
+                self.game_state.input_state.gamepad_right_axis_y = value;
             }
             _ => return Ok(()),
         }
 
-        let gamepad_axis_x = self.game_state.input_state.gamepad_axis_x;
-        let gamepad_axis_y = self.game_state.input_state.gamepad_axis_y;
+        let gamepad_axis_x = self.game_state.input_state.gamepad_left_axis_x;
+        let gamepad_axis_y = self.game_state.input_state.gamepad_left_axis_y;
         let controller_stick_deadzone = self
             .game_state
             .settings
@@ -222,7 +246,7 @@ impl events::EventHandler for GlobalState {
 
         if let Some(scene) = self.scene_manager.current_mut() {
             if let Some(scene_switch) = scene.input(&mut self.game_state, ctx, game_input)? {
-                self.scene_manager.switch(scene_switch);
+                self.scene_manager.switch(ctx, scene_switch);
             }
         }
 
