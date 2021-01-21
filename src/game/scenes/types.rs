@@ -107,7 +107,7 @@ impl SceneManager {
     }
 
     fn build_draw_stack(&mut self) -> Vec<Rc<RefCell<dyn Scene>>> {
-        self.build_update_stack_from(self.scene_stack.as_slice())
+        self.build_draw_stack_from(self.scene_stack.as_slice())
     }
 
     pub fn pop(&mut self, ctx: &mut ggez::Context) -> Option<Rc<RefCell<dyn Scene>>> {
