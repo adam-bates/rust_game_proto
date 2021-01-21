@@ -42,11 +42,7 @@ impl Scene for MainMenuScene {
         Ok(None)
     }
 
-    fn draw(
-        &self,
-        game_state: &GameState,
-        ctx: &mut ggez::Context,
-    ) -> GameResult<Option<SceneSwitch>> {
+    fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
         ggez::graphics::clear(ctx, ggez::graphics::WHITE);
         ggez::graphics::draw(ctx, &self.mesh, self.mesh_param.rotation(self.rotation))?;
         // let image = ggez::graphics::Image::new(ctx, "/background_pallet_town.png")?;
@@ -88,7 +84,7 @@ impl Scene for MainMenuScene {
         // use ggez::graphics::Drawable;
         // sprite_batch.draw(ctx, ggez::graphics::DrawParam::default())?;
 
-        Ok(None)
+        Ok(())
     }
 
     fn input(

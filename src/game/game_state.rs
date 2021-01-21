@@ -3,10 +3,13 @@ use super::{
     events,
     input::types::GameInput,
     render::state::RenderState,
-    scenes::{types::SceneManager, MainMenuScene},
+    scenes::{
+        types::SceneManager, InGameScene, MainMenuScene, OverworldScene, PalletTownOverworldScene,
+    },
     settings::{AspectRatio, Settings},
     world,
 };
+use std::{cell::RefCell, rc::Rc};
 
 #[derive(Default)]
 pub struct InputState {
@@ -43,11 +46,29 @@ pub struct GlobalState {
 
 impl GlobalState {
     pub fn new(ctx: &mut ggez::Context, settings: Settings) -> GameResult<Self> {
-        let mut scene_manager = SceneManager::default();
-        let initial_scene = Box::new(MainMenuScene::new(ctx)?);
-        scene_manager.push(ctx, initial_scene);
+        let mut game_state = GameState::new(ctx, settings)?;
 
-        let game_state = GameState::new(ctx, settings)?;
+        let mut scene_manager = SceneManager::default();
+
+        println!("update_stack: {}", scene_manager.update_stack().len());
+
+        let scene = Rc::new(RefCell::new(InGameScene::new(&mut game_state, ctx)?));
+        scene_manager.push(ctx, scene);
+
+        println!("update_stack: {}", scene_manager.update_stack().len());
+
+        let scene = Rc::new(RefCell::new(OverworldScene::new(&mut game_state, ctx)?));
+        scene_manager.push(ctx, scene);
+
+        println!("update_stack: {}", scene_manager.update_stack().len());
+
+        let scene = Rc::new(RefCell::new(PalletTownOverworldScene::new(
+            &mut game_state,
+            ctx,
+        )?));
+        scene_manager.push(ctx, scene);
+
+        println!("update_stack: {}", scene_manager.update_stack().len());
 
         Ok(Self {
             scene_manager,
@@ -76,18 +97,22 @@ impl GlobalState {
 
 impl events::EventHandler for GlobalState {
     fn update(&mut self, ctx: &mut ggez::Context) -> GameResult {
-        if let Some(scene) = self.scene_manager.current_mut() {
-            if let Some(scene_switch) = scene.update(&mut self.game_state, ctx)? {
-                self.scene_manager.switch(ctx, scene_switch)?;
-            }
+        let mut scene_switch = None;
+
+        for scene in self.scene_manager.update_stack() {
+            scene_switch = scene.borrow_mut().update(&mut self.game_state, ctx)?;
+        }
+
+        if let Some(scene_switch) = scene_switch {
+            self.scene_manager.switch(ctx, scene_switch)?;
         }
 
         Ok(())
     }
 
     fn draw(&self, ctx: &mut ggez::Context) -> GameResult {
-        if let Some(scene) = self.scene_manager.current() {
-            scene.draw(&self.game_state, ctx)?;
+        for scene in self.scene_manager.draw_stack() {
+            scene.borrow().draw(&self.game_state, ctx)?;
         }
 
         Ok(())
@@ -135,17 +160,25 @@ impl events::EventHandler for GlobalState {
                 }
                 ggez::input::keyboard::KeyCode::M => {
                     println!("Replacing top");
-                    self.scene_manager
-                        .replace_top(ctx, Box::new(|ctx| Ok(Box::new(MainMenuScene::new(ctx)?))))?;
+                    self.scene_manager.replace_top(
+                        ctx,
+                        Box::new(|ctx| Ok(Rc::new(RefCell::new(MainMenuScene::new(ctx)?)))),
+                    )?;
                 }
                 // ggez::event::KeyCode::S => self.settings.save(),
                 _ => {}
             }
         } else if let Some(game_input) = GameInput::from_keycode(&keycode, true) {
+            let mut scene_switch = None;
+
             if let Some(scene) = self.scene_manager.current_mut() {
-                if let Some(scene_switch) = scene.input(&mut self.game_state, ctx, game_input)? {
-                    self.scene_manager.switch(ctx, scene_switch)?;
-                }
+                scene_switch = scene
+                    .borrow_mut()
+                    .input(&mut self.game_state, ctx, game_input)?;
+            }
+
+            if let Some(scene_switch) = scene_switch {
+                self.scene_manager.switch(ctx, scene_switch)?;
             }
         }
 
@@ -158,10 +191,16 @@ impl events::EventHandler for GlobalState {
         keycode: ggez::input::keyboard::KeyCode,
     ) -> GameResult {
         if let Some(game_input) = GameInput::from_keycode(&keycode, false) {
+            let mut scene_switch = None;
+
             if let Some(scene) = self.scene_manager.current_mut() {
-                if let Some(scene_switch) = scene.input(&mut self.game_state, ctx, game_input)? {
-                    self.scene_manager.switch(ctx, scene_switch)?;
-                }
+                scene_switch = scene
+                    .borrow_mut()
+                    .input(&mut self.game_state, ctx, game_input)?;
+            }
+
+            if let Some(scene_switch) = scene_switch {
+                self.scene_manager.switch(ctx, scene_switch)?;
             }
         }
 
@@ -175,10 +214,16 @@ impl events::EventHandler for GlobalState {
         _id: ggez::input::gamepad::GamepadId,
     ) -> GameResult {
         if let Some(game_input) = GameInput::from_gamepad_button(&btn, true) {
+            let mut scene_switch = None;
+
             if let Some(scene) = self.scene_manager.current_mut() {
-                if let Some(scene_switch) = scene.input(&mut self.game_state, ctx, game_input)? {
-                    self.scene_manager.switch(ctx, scene_switch)?;
-                }
+                scene_switch = scene
+                    .borrow_mut()
+                    .input(&mut self.game_state, ctx, game_input)?;
+            }
+
+            if let Some(scene_switch) = scene_switch {
+                self.scene_manager.switch(ctx, scene_switch)?;
             }
         }
 
@@ -192,10 +237,16 @@ impl events::EventHandler for GlobalState {
         _id: ggez::input::gamepad::GamepadId,
     ) -> GameResult {
         if let Some(game_input) = GameInput::from_gamepad_button(&btn, false) {
+            let mut scene_switch = None;
+
             if let Some(scene) = self.scene_manager.current_mut() {
-                if let Some(scene_switch) = scene.input(&mut self.game_state, ctx, game_input)? {
-                    self.scene_manager.switch(ctx, scene_switch)?;
-                }
+                scene_switch = scene
+                    .borrow_mut()
+                    .input(&mut self.game_state, ctx, game_input)?;
+            }
+
+            if let Some(scene_switch) = scene_switch {
+                self.scene_manager.switch(ctx, scene_switch)?;
             }
         }
 
@@ -236,10 +287,16 @@ impl events::EventHandler for GlobalState {
         let game_input =
             GameInput::from_gamepad_axes(gamepad_axis_x, gamepad_axis_y, controller_stick_deadzone);
 
+        let mut scene_switch = None;
+
         if let Some(scene) = self.scene_manager.current_mut() {
-            if let Some(scene_switch) = scene.input(&mut self.game_state, ctx, game_input)? {
-                self.scene_manager.switch(ctx, scene_switch)?;
-            }
+            scene_switch = scene
+                .borrow_mut()
+                .input(&mut self.game_state, ctx, game_input)?;
+        }
+
+        if let Some(scene_switch) = scene_switch {
+            self.scene_manager.switch(ctx, scene_switch)?;
         }
 
         Ok(())

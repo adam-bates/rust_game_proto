@@ -1,6 +1,7 @@
 use super::{error::types::GameResult, game_state::GameState, input::types::GameInput};
+use std::{cell::RefCell, rc::Rc};
 
-pub type SceneBuilder = Box<dyn Fn(&mut ggez::Context) -> GameResult<Box<dyn Scene>>>;
+pub type SceneBuilder = Box<dyn Fn(&mut ggez::Context) -> GameResult<Rc<RefCell<dyn Scene>>>>;
 
 pub enum SceneSwitch {
     Pop,
@@ -16,11 +17,7 @@ pub trait Scene {
         ctx: &mut ggez::Context,
     ) -> GameResult<Option<SceneSwitch>>;
 
-    fn draw(
-        &self,
-        game_state: &GameState,
-        ctx: &mut ggez::Context,
-    ) -> GameResult<Option<SceneSwitch>>;
+    fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult;
 
     fn input(
         &mut self,
@@ -32,25 +29,126 @@ pub trait Scene {
     fn should_draw_previous(&self) -> bool {
         false
     }
+
+    fn should_update_previous(&self) -> bool {
+        false
+    }
 }
 
 #[derive(Default)]
 pub struct SceneManager {
-    scene_stack: Vec<Box<dyn Scene>>,
+    scene_stack: Vec<Rc<RefCell<dyn Scene>>>,
+    update_stack: Vec<Rc<RefCell<dyn Scene>>>,
+    draw_stack: Vec<Rc<RefCell<dyn Scene>>>,
 }
 
 impl SceneManager {
-    pub fn push(&mut self, ctx: &mut ggez::Context, scene: Box<dyn Scene>) {
+    pub fn update_stack(&mut self) -> &mut Vec<Rc<RefCell<dyn Scene>>> {
+        &mut self.update_stack
+    }
+
+    pub fn draw_stack(&self) -> &Vec<Rc<RefCell<dyn Scene>>> {
+        &self.draw_stack
+    }
+
+    pub fn push(&mut self, ctx: &mut ggez::Context, scene: Rc<RefCell<dyn Scene>>) {
         ggez::graphics::clear(ctx, ggez::graphics::BLACK);
+
+        if !scene.borrow().should_draw_previous() {
+            self.draw_stack.clear();
+        }
+        self.draw_stack.push(Rc::clone(&scene));
+
+        if !scene.borrow().should_update_previous() {
+            self.update_stack.clear();
+        }
+        self.update_stack.push(Rc::clone(&scene));
+
         self.scene_stack.push(scene);
     }
 
-    pub fn pop(&mut self, ctx: &mut ggez::Context) -> Option<Box<dyn Scene>> {
-        ggez::graphics::clear(ctx, ggez::graphics::BLACK);
-        self.scene_stack.pop()
+    fn build_update_stack_from(
+        &self,
+        source: &[Rc<RefCell<dyn Scene>>],
+    ) -> Vec<Rc<RefCell<dyn Scene>>> {
+        let mut update_stack = vec![];
+
+        if let Some((head, rest)) = source.split_last() {
+            if head.borrow().should_update_previous() {
+                update_stack.append(&mut self.build_update_stack_from(rest));
+            }
+
+            update_stack.push(Rc::clone(head));
+        }
+
+        update_stack
     }
 
-    pub fn unchecked_pop(&mut self, ctx: &mut ggez::Context) -> Box<dyn Scene> {
+    fn build_update_stack(&mut self) -> Vec<Rc<RefCell<dyn Scene>>> {
+        let source = self.scene_stack.as_slice();
+        self.build_update_stack_from(source)
+    }
+
+    fn build_draw_stack_from(
+        &self,
+        source: &[Rc<RefCell<dyn Scene>>],
+    ) -> Vec<Rc<RefCell<dyn Scene>>> {
+        let mut draw_stack = vec![];
+
+        if let Some((head, rest)) = source.split_last() {
+            if head.borrow().should_draw_previous() {
+                draw_stack.append(&mut self.build_draw_stack_from(rest));
+            }
+
+            draw_stack.push(Rc::clone(head));
+        }
+
+        draw_stack
+    }
+
+    fn build_draw_stack(&mut self) -> Vec<Rc<RefCell<dyn Scene>>> {
+        self.build_update_stack_from(self.scene_stack.as_slice())
+    }
+
+    pub fn pop(&mut self, ctx: &mut ggez::Context) -> Option<Rc<RefCell<dyn Scene>>> {
+        ggez::graphics::clear(ctx, ggez::graphics::BLACK);
+
+        let popped = self.scene_stack.pop();
+        self.update_stack.pop();
+        self.draw_stack.pop();
+
+        if let Some(popped) = popped {
+            if !popped.borrow().should_update_previous() {
+                // Wasn't updating previous
+                if let Some(last) = self.scene_stack.last() {
+                    if last.borrow().should_update_previous() {
+                        // Requires filled out update_stack
+                        self.update_stack = self.build_update_stack();
+                    } else {
+                        self.update_stack.push(Rc::clone(last));
+                    }
+                }
+            }
+
+            if !popped.borrow().should_draw_previous() {
+                // Wasn't drawing previous
+                if let Some(last) = self.scene_stack.last() {
+                    if last.borrow().should_draw_previous() {
+                        // Requires filled out draw_stack
+                        self.draw_stack = self.build_draw_stack();
+                    } else {
+                        self.draw_stack.push(Rc::clone(last));
+                    }
+                }
+            }
+
+            return Some(popped);
+        }
+
+        None
+    }
+
+    pub fn unchecked_pop(&mut self, ctx: &mut ggez::Context) -> Rc<RefCell<dyn Scene>> {
         self.pop(ctx)
             .expect("Failed to pop scene from empty SceneManager::scene_stack")
     }
@@ -115,31 +213,51 @@ impl SceneManager {
         Ok(())
     }
 
-    pub fn current(&self) -> Option<&Box<dyn Scene>> {
+    pub fn current(&self) -> Option<&Rc<RefCell<dyn Scene>>> {
         self.scene_stack.last()
     }
 
-    pub fn current_mut(&mut self) -> Option<&mut Box<dyn Scene>> {
+    pub fn current_mut(&mut self) -> Option<&mut Rc<RefCell<dyn Scene>>> {
         self.scene_stack.last_mut()
     }
 
-    pub fn unchecked_current(&self) -> &dyn Scene {
+    pub fn unchecked_current(&self) -> &RefCell<dyn Scene> {
         &**self
             .current()
             .expect("Failed to get current scene from empty SceneManager::scene_stack")
     }
 
-    pub fn unchecked_current_mut(&mut self) -> &mut dyn Scene {
-        &mut **self
-            .current_mut()
-            .expect("Failed to get current scene from empty SceneManager::scene_stack")
+    pub fn previous(&self) -> Option<&Rc<RefCell<dyn Scene>>> {
+        if let Some((_, rest)) = self.scene_stack.split_last() {
+            return rest.last();
+        }
+
+        None
+    }
+
+    pub fn previous_mut(&mut self) -> Option<&mut Rc<RefCell<dyn Scene>>> {
+        if let Some((_, rest)) = self.scene_stack.split_last_mut() {
+            return rest.last_mut();
+        }
+
+        None
+    }
+
+    pub fn unchecked_previous(&self) -> &RefCell<dyn Scene> {
+        &**self
+            .scene_stack
+            .split_last()
+            .expect("Failed to split last scene from SceneManager::scene_stack")
+            .1
+            .last()
+            .expect("Failed to get previous scene from SceneManager::scene_stack")
     }
 
     pub fn switch(
         &mut self,
         ctx: &mut ggez::Context,
         switch: SceneSwitch,
-    ) -> GameResult<Option<Box<dyn Scene>>> {
+    ) -> GameResult<Option<Rc<RefCell<dyn Scene>>>> {
         match switch {
             SceneSwitch::Pop => return Ok(self.pop(ctx)),
             SceneSwitch::Push(builder) => {
@@ -157,7 +275,7 @@ impl SceneManager {
         &mut self,
         ctx: &mut ggez::Context,
         switch: SceneSwitch,
-    ) -> GameResult<Option<Box<dyn Scene>>> {
+    ) -> GameResult<Option<Rc<RefCell<dyn Scene>>>> {
         match switch {
             SceneSwitch::Pop => return Ok(Some(self.unchecked_pop(ctx))),
             SceneSwitch::Push(builder) => {
