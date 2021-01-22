@@ -1,12 +1,12 @@
 use super::{
     ecs::{
-        components::{Player, RealPosition, TargetPosition},
-        resources::{Camera, CameraBounds},
-        systems::{FollowPlayerSystem, PrintSystem},
+        components::{CurrentPosition, Player, TargetPosition, Timer},
+        resources::{Camera, CameraBounds, PlayerMovementRequest},
+        systems::{FollowPlayerSystem, MoveCurrentPositionSystem, MovePlayerTargetPositionSystem},
     },
     error::types::GameResult,
     game_state::GameState,
-    input::types::{GameButton, GameInput},
+    input::types::{GameButton, GameDirection, GameInput},
     types::{Scene, SceneSwitch},
 };
 use specs::{Builder, WorldExt};
@@ -19,22 +19,32 @@ impl OverworldScene {
     pub fn new(game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
         // TODO: Build from loaded save file
 
-        let player_target_position = TargetPosition { x: 5., y: 7. };
-        let player_real_position = RealPosition {
-            x: player_target_position.x,
-            y: player_target_position.y,
+        let player_target_position = TargetPosition { x: 5, y: 7 };
+        let player_current_position = CurrentPosition {
+            x: player_target_position.x as f32,
+            y: player_target_position.y as f32,
         };
 
         let camera = Camera {
-            x: player_target_position.x,
-            y: player_target_position.y,
+            x: player_target_position.x as f32,
+            y: player_target_position.y as f32,
         };
 
         game_state.world.insert(camera);
 
         let mut dispatcher = specs::DispatcherBuilder::new()
+            .with(
+                MovePlayerTargetPositionSystem,
+                "move_player_target_position_system",
+                &[],
+            )
+            .with(
+                MoveCurrentPositionSystem,
+                "move_current_position_system",
+                &[],
+            )
             .with(FollowPlayerSystem, "follow_player_system", &[])
-            .with(PrintSystem, "print_system", &["follow_player_system"])
+            // .with(PrintSystem, "print_system", &["follow_player_system"])
             .build();
         dispatcher.setup(&mut game_state.world);
 
@@ -42,8 +52,14 @@ impl OverworldScene {
             .world
             .create_entity()
             .with(Player)
-            .with(player_real_position)
+            .with(player_current_position)
             .with(player_target_position)
+            .with(Timer {
+                duration: 1.0,
+                repeating: true,
+                elapsed: 0.0,
+                finished: true, // Start finished to allow movement
+            })
             .build();
 
         Ok(Self { dispatcher })
@@ -58,7 +74,7 @@ impl Scene for OverworldScene {
         game_state: &mut GameState,
         ctx: &mut ggez::Context,
     ) -> GameResult<Option<SceneSwitch>> {
-        println!("OverworldScene::update");
+        // println!("OverworldScene::update");
         self.dispatcher.dispatch(&game_state.world);
         Ok(None)
     }
@@ -93,6 +109,57 @@ impl Scene for OverworldScene {
             _ => {}
         }
 
+        if let Some(player_movement_request) = game_state.world.get_mut::<PlayerMovementRequest>() {
+            match input {
+                GameInput::Button { button, pressed } => match button {
+                    GameButton::Up => {
+                        player_movement_request.last_requested_direction = if pressed {
+                            Some(GameDirection::Up)
+                        } else {
+                            None
+                        };
+                        player_movement_request.last_requested_y_direction =
+                            player_movement_request.last_requested_direction.clone();
+                    }
+                    GameButton::Down => {
+                        player_movement_request.last_requested_direction = if pressed {
+                            Some(GameDirection::Down)
+                        } else {
+                            None
+                        };
+                        player_movement_request.last_requested_y_direction =
+                            player_movement_request.last_requested_direction.clone();
+                    }
+                    GameButton::Left => {
+                        player_movement_request.last_requested_direction = if pressed {
+                            Some(GameDirection::Left)
+                        } else {
+                            None
+                        };
+                        player_movement_request.last_requested_x_direction =
+                            player_movement_request.last_requested_direction.clone();
+                    }
+                    GameButton::Right => {
+                        player_movement_request.last_requested_direction = if pressed {
+                            Some(GameDirection::Right)
+                        } else {
+                            None
+                        };
+                        player_movement_request.last_requested_x_direction =
+                            player_movement_request.last_requested_direction.clone();
+                    }
+                    _ => {}
+                },
+                GameInput::Direction { direction } => {
+                    player_movement_request.last_requested_direction = direction;
+                }
+            }
+        }
+
         Ok(None)
+    }
+
+    fn should_update_previous(&self) -> bool {
+        true
     }
 }

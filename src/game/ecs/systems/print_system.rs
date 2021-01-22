@@ -1,5 +1,5 @@
 use super::{
-    components::{Player, RealPosition, TargetPosition},
+    components::{Player, CurrentPosition, TargetPosition},
     resources::Camera,
 };
 use specs::Join;
@@ -10,7 +10,7 @@ impl<'a> specs::System<'a> for PrintSystem {
     type SystemData = (
         Option<specs::Read<'a, Camera>>,
         specs::ReadStorage<'a, Player>,
-        specs::ReadStorage<'a, RealPosition>,
+        specs::ReadStorage<'a, CurrentPosition>,
         specs::ReadStorage<'a, TargetPosition>,
     );
 

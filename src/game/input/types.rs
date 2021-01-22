@@ -6,7 +6,7 @@ const NEG_PI_BY_4: f32 = -1. * std::f32::consts::FRAC_PI_4;
 const POS_PI_BY_4: f32 = std::f32::consts::FRAC_PI_4;
 const POS_3_PI_BY_4: f32 = 3. * std::f32::consts::FRAC_PI_4;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum GameDirection {
     Up,
     Down,
@@ -14,15 +14,35 @@ pub enum GameDirection {
     Right,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+impl GameDirection {
+    const UP: (i32, i32) = (0, -1);
+    const DOWN: (i32, i32) = (0, 1);
+    const LEFT: (i32, i32) = (-1, 0);
+    const RIGHT: (i32, i32) = (1, 0);
+
+    pub fn to_xy(&self) -> (i32, i32) {
+        match self {
+            Self::Up => Self::UP,
+            Self::Down => Self::DOWN,
+            Self::Left => Self::LEFT,
+            Self::Right => Self::RIGHT,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum GameButton {
+    Up,
+    Down,
+    Left,
+    Right,
     Primary,
     Secondary,
     Start,
     Select, // TODO: Should we use X/Y buttons? Or L/R buttons?
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum GameInput {
     Direction { direction: Option<GameDirection> },
     Button { button: GameButton, pressed: bool },
@@ -31,17 +51,21 @@ pub enum GameInput {
 impl GameInput {
     pub fn from_keycode(keycode: &KeyCode, pressed: bool) -> Option<Self> {
         match *keycode {
-            KeyCode::W | KeyCode::Up => Some(Self::Direction {
-                direction: Some(GameDirection::Up),
+            KeyCode::W | KeyCode::Up => Some(Self::Button {
+                button: GameButton::Up,
+                pressed,
             }),
-            KeyCode::S | KeyCode::Down => Some(Self::Direction {
-                direction: Some(GameDirection::Down),
+            KeyCode::S | KeyCode::Down => Some(Self::Button {
+                button: GameButton::Down,
+                pressed,
             }),
-            KeyCode::A | KeyCode::Left => Some(Self::Direction {
-                direction: Some(GameDirection::Left),
+            KeyCode::A | KeyCode::Left => Some(Self::Button {
+                button: GameButton::Left,
+                pressed,
             }),
-            KeyCode::D | KeyCode::Right => Some(Self::Direction {
-                direction: Some(GameDirection::Right),
+            KeyCode::D | KeyCode::Right => Some(Self::Button {
+                button: GameButton::Right,
+                pressed,
             }),
             KeyCode::Return => Some(Self::Button {
                 button: GameButton::Primary,

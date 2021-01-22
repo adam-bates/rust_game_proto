@@ -1,4 +1,5 @@
 use super::{
+    ecs::resources::DeltaTime,
     error::types::GameResult,
     game_state::GameState,
     input::types::GameInput,
@@ -23,7 +24,10 @@ impl Scene for InGameScene {
         game_state: &mut GameState,
         ctx: &mut ggez::Context,
     ) -> GameResult<Option<SceneSwitch>> {
-        println!("InGameScene::update");
+        if let Some(mut delta) = game_state.world.get_mut::<DeltaTime>() {
+            delta.duration = ggez::timer::delta(ctx);
+        }
+
         Ok(None)
     }
 

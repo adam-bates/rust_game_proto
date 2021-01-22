@@ -45,44 +45,6 @@ impl Scene for MainMenuScene {
     fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
         ggez::graphics::clear(ctx, ggez::graphics::WHITE);
         ggez::graphics::draw(ctx, &self.mesh, self.mesh_param.rotation(self.rotation))?;
-        // let image = ggez::graphics::Image::new(ctx, "/background_pallet_town.png")?;
-        // let background_width = 24.;
-        // let background_height = 20.;
-
-        // let mut sprite_batch = ggez::graphics::spritebatch::SpriteBatch::new(image);
-
-        // let inverse_background_width = 1. / background_width;
-        // let inverse_background_height = 1. / background_height;
-
-        // let camera_width = config::VIEWPORT_TILES_WIDTH_USIZE as i32;
-        // let camera_height = config::VIEWPORT_TILES_HEIGHT_USIZE as i32;
-
-        // let pos_x = background_width as i32 - camera_width;
-        // let pos_y = background_height as i32 - camera_height;
-
-        // for x in pos_x..camera_width + pos_x {
-        //     for y in pos_y..camera_height + pos_y {
-        //         sprite_batch.add(
-        //             ggez::graphics::DrawParam::default()
-        //                 .src(
-        //                     [
-        //                         x as f32 * inverse_background_width,
-        //                         y as f32 * inverse_background_height,
-        //                         inverse_background_width,
-        //                         inverse_background_height,
-        //                     ]
-        //                     .into(),
-        //                 )
-        //                 .dest([
-        //                     (x - pos_x) as f32 * config::TILE_PIXELS_SIZE_F32,
-        //                     (y - pos_y) as f32 * config::TILE_PIXELS_SIZE_F32,
-        //                 ]),
-        //         );
-        //     }
-        // }
-
-        // use ggez::graphics::Drawable;
-        // sprite_batch.draw(ctx, ggez::graphics::DrawParam::default())?;
 
         Ok(())
     }
@@ -93,7 +55,7 @@ impl Scene for MainMenuScene {
         ctx: &mut ggez::Context,
         input: GameInput,
     ) -> GameResult<Option<SceneSwitch>> {
-        println!("input: {:?}", input);
+        // println!("input: {:?}", input);
         if ggez::input::keyboard::is_mod_active(ctx, ggez::input::keyboard::KeyMods::CTRL) {
             match input {
                 GameInput::Button { button, .. } => match button {

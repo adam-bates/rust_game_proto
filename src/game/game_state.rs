@@ -139,7 +139,6 @@ impl events::EventHandler for GlobalState {
         ctx: &mut ggez::Context,
         keycode: ggez::input::keyboard::KeyCode,
     ) -> GameResult {
-        println!("key down: {:?}", keycode);
         if ggez::input::keyboard::is_mod_active(ctx, ggez::input::keyboard::KeyMods::CTRL) {
             match keycode {
                 ggez::input::keyboard::KeyCode::Q => ggez::event::quit(ctx),
@@ -171,10 +170,11 @@ impl events::EventHandler for GlobalState {
         } else if let Some(game_input) = GameInput::from_keycode(&keycode, true) {
             let mut scene_switch = None;
 
-            if let Some(scene) = self.scene_manager.current_mut() {
-                scene_switch = scene
-                    .borrow_mut()
-                    .input(&mut self.game_state, ctx, game_input)?;
+            for scene in self.scene_manager.update_stack() {
+                scene_switch =
+                    scene
+                        .borrow_mut()
+                        .input(&mut self.game_state, ctx, game_input.clone())?;
             }
 
             if let Some(scene_switch) = scene_switch {
@@ -193,10 +193,11 @@ impl events::EventHandler for GlobalState {
         if let Some(game_input) = GameInput::from_keycode(&keycode, false) {
             let mut scene_switch = None;
 
-            if let Some(scene) = self.scene_manager.current_mut() {
-                scene_switch = scene
-                    .borrow_mut()
-                    .input(&mut self.game_state, ctx, game_input)?;
+            for scene in self.scene_manager.update_stack() {
+                scene_switch =
+                    scene
+                        .borrow_mut()
+                        .input(&mut self.game_state, ctx, game_input.clone())?;
             }
 
             if let Some(scene_switch) = scene_switch {
@@ -216,10 +217,11 @@ impl events::EventHandler for GlobalState {
         if let Some(game_input) = GameInput::from_gamepad_button(&btn, true) {
             let mut scene_switch = None;
 
-            if let Some(scene) = self.scene_manager.current_mut() {
-                scene_switch = scene
-                    .borrow_mut()
-                    .input(&mut self.game_state, ctx, game_input)?;
+            for scene in self.scene_manager.update_stack() {
+                scene_switch =
+                    scene
+                        .borrow_mut()
+                        .input(&mut self.game_state, ctx, game_input.clone())?;
             }
 
             if let Some(scene_switch) = scene_switch {
@@ -239,10 +241,11 @@ impl events::EventHandler for GlobalState {
         if let Some(game_input) = GameInput::from_gamepad_button(&btn, false) {
             let mut scene_switch = None;
 
-            if let Some(scene) = self.scene_manager.current_mut() {
-                scene_switch = scene
-                    .borrow_mut()
-                    .input(&mut self.game_state, ctx, game_input)?;
+            for scene in self.scene_manager.update_stack() {
+                scene_switch =
+                    scene
+                        .borrow_mut()
+                        .input(&mut self.game_state, ctx, game_input.clone())?;
             }
 
             if let Some(scene_switch) = scene_switch {
@@ -289,10 +292,11 @@ impl events::EventHandler for GlobalState {
 
         let mut scene_switch = None;
 
-        if let Some(scene) = self.scene_manager.current_mut() {
-            scene_switch = scene
-                .borrow_mut()
-                .input(&mut self.game_state, ctx, game_input)?;
+        for scene in self.scene_manager.update_stack() {
+            scene_switch =
+                scene
+                    .borrow_mut()
+                    .input(&mut self.game_state, ctx, game_input.clone())?;
         }
 
         if let Some(scene_switch) = scene_switch {

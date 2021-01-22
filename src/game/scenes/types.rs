@@ -42,6 +42,34 @@ pub struct SceneManager {
     draw_stack: Vec<Rc<RefCell<dyn Scene>>>,
 }
 
+fn build_update_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<RefCell<dyn Scene>>> {
+    let mut update_stack = vec![];
+
+    if let Some((head, rest_of_stack)) = source_stack.split_last() {
+        if head.borrow().should_update_previous() {
+            update_stack.append(&mut build_update_stack_from(rest_of_stack));
+        }
+
+        update_stack.push(Rc::clone(head));
+    }
+
+    update_stack
+}
+
+fn build_draw_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<RefCell<dyn Scene>>> {
+    let mut draw_stack = vec![];
+
+    if let Some((head, rest_of_stack)) = source_stack.split_last() {
+        if head.borrow().should_draw_previous() {
+            draw_stack.append(&mut build_draw_stack_from(rest_of_stack));
+        }
+
+        draw_stack.push(Rc::clone(head));
+    }
+
+    draw_stack
+}
+
 impl SceneManager {
     pub fn update_stack(&mut self) -> &mut Vec<Rc<RefCell<dyn Scene>>> {
         &mut self.update_stack
@@ -67,47 +95,12 @@ impl SceneManager {
         self.scene_stack.push(scene);
     }
 
-    fn build_update_stack_from(
-        &self,
-        source: &[Rc<RefCell<dyn Scene>>],
-    ) -> Vec<Rc<RefCell<dyn Scene>>> {
-        let mut update_stack = vec![];
-
-        if let Some((head, rest)) = source.split_last() {
-            if head.borrow().should_update_previous() {
-                update_stack.append(&mut self.build_update_stack_from(rest));
-            }
-
-            update_stack.push(Rc::clone(head));
-        }
-
-        update_stack
-    }
-
     fn build_update_stack(&mut self) -> Vec<Rc<RefCell<dyn Scene>>> {
-        let source = self.scene_stack.as_slice();
-        self.build_update_stack_from(source)
-    }
-
-    fn build_draw_stack_from(
-        &self,
-        source: &[Rc<RefCell<dyn Scene>>],
-    ) -> Vec<Rc<RefCell<dyn Scene>>> {
-        let mut draw_stack = vec![];
-
-        if let Some((head, rest)) = source.split_last() {
-            if head.borrow().should_draw_previous() {
-                draw_stack.append(&mut self.build_draw_stack_from(rest));
-            }
-
-            draw_stack.push(Rc::clone(head));
-        }
-
-        draw_stack
+        build_update_stack_from(self.scene_stack.as_slice())
     }
 
     fn build_draw_stack(&mut self) -> Vec<Rc<RefCell<dyn Scene>>> {
-        self.build_draw_stack_from(self.scene_stack.as_slice())
+        build_draw_stack_from(self.scene_stack.as_slice())
     }
 
     pub fn pop(&mut self, ctx: &mut ggez::Context) -> Option<Rc<RefCell<dyn Scene>>> {

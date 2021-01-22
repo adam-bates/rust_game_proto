@@ -1,5 +1,5 @@
 use super::{
-    components::{Player, RealPosition},
+    components::{Player, CurrentPosition},
     resources::{Camera, CameraBounds},
 };
 use specs::Join;
@@ -11,7 +11,7 @@ impl<'a> specs::System<'a> for FollowPlayerSystem {
         specs::WriteExpect<'a, Camera>,
         Option<specs::Read<'a, CameraBounds>>,
         specs::ReadStorage<'a, Player>,
-        specs::ReadStorage<'a, RealPosition>,
+        specs::ReadStorage<'a, CurrentPosition>,
     );
 
     fn run(&mut self, (mut camera, camera_bounds, player, real_position): Self::SystemData) {
