@@ -15,12 +15,12 @@ pub enum GameDirection {
 }
 
 impl GameDirection {
-    const UP: (i32, i32) = (0, -1);
-    const DOWN: (i32, i32) = (0, 1);
-    const LEFT: (i32, i32) = (-1, 0);
-    const RIGHT: (i32, i32) = (1, 0);
+    const UP: (isize, isize) = (0, -1);
+    const DOWN: (isize, isize) = (0, 1);
+    const LEFT: (isize, isize) = (-1, 0);
+    const RIGHT: (isize, isize) = (1, 0);
 
-    pub fn to_xy(&self) -> (i32, i32) {
+    pub fn to_xy(&self) -> (isize, isize) {
         match self {
             Self::Up => Self::UP,
             Self::Down => Self::DOWN,

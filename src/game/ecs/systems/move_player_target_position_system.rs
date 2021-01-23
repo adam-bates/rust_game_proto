@@ -1,16 +1,14 @@
 use super::{
     components::{CurrentPosition, Player, TargetPosition, Timer},
     input::types::GameDirection,
-    resources::PlayerMovementRequest,
+    resources::{PlayerMovementRequest, TileMap},
 };
 use specs::Join;
-
-const MAX_X: i32 = 24; // TODO
-const MAX_Y: i32 = 20; // TODO
 
 pub struct MovePlayerTargetPositionSystem;
 
 type SystemData<'a> = (
+    Option<specs::Read<'a, TileMap>>,
     specs::Read<'a, PlayerMovementRequest>,
     specs::ReadStorage<'a, Player>,
     specs::ReadStorage<'a, CurrentPosition>,
@@ -20,106 +18,150 @@ type SystemData<'a> = (
 
 fn handle_input<'a>(
     (
-        _player_movement_request,
-        player_component,
-        current_position_component,
-        mut target_position_component,
-        mut timer_component,
+        tile_map_r,
+        _player_movement_request_r,
+        player_c,
+        current_position_c,
+        mut target_position_c,
+        mut timer_c,
     ): SystemData<'a>,
     direction: &GameDirection,
 ) {
-    let (direction_x, direction_y) = direction.to_xy();
+    if let Some(tile_map) = &tile_map_r {
+        let (direction_x, direction_y) = direction.to_xy();
 
-    for (_, current_position, mut target_position, timer) in (
-        &player_component,
-        &current_position_component,
-        &mut target_position_component,
-        &mut timer_component,
-    )
-        .join()
-    {
-        if timer.finished() {
-            target_position.x =
-                nalgebra::clamp(current_position.x as i32 + direction_x, 0, MAX_X) as u32;
+        for (_, current_position, timer) in (&player_c, &current_position_c, &mut timer_c).join() {
+            // Help linter
+            #[cfg(debug_assertions)]
+            let current_position = current_position as &CurrentPosition;
+            #[cfg(debug_assertions)]
+            let timer = timer as &mut Timer;
 
-            target_position.y =
-                nalgebra::clamp(current_position.y as i32 + direction_y, 0, MAX_Y) as u32;
+            let mut set_target_position = None;
+            if timer.finished() {
+                let tile_map_dimensions = tile_map.dimensions();
 
-            let is_collision = false; // TODO
+                let target_position_x = nalgebra::clamp(
+                    current_position.x as isize + direction_x,
+                    0,
+                    tile_map_dimensions.0 as isize - 1,
+                ) as usize;
 
-            if is_collision {
-                target_position.x = current_position.x as u32;
-                target_position.y = current_position.y as u32;
+                let target_position_y = nalgebra::clamp(
+                    current_position.y as isize + direction_y,
+                    0,
+                    tile_map_dimensions.1 as isize - 1,
+                ) as usize;
+
+                let is_collision = false; // TODO
+
+                if is_collision {
+                    return;
+                }
+
+                if tile_map
+                    .get_tile(target_position_x, target_position_y)
+                    .entity
+                    .is_some()
+                {
+                    return;
+                }
+
+                // for (_, other_current_position, other_target_position) in
+                //     (!&player_c, &current_position_c, &target_position_c).join()
+                // {
+                //     let other_current_position = other_current_position as &CurrentPosition;
+                //     let other_target_position = other_target_position as &TargetPosition;
+
+                //     if (other_current_position.x.round() as usize == target_position_x
+                //         && other_current_position.y.round() as usize == target_position_y)
+                //         || (other_target_position.x == target_position_x
+                //             && other_target_position.y == target_position_y)
+                //     {
+                //         return;
+                //     }
+                // }
+
+                if target_position_x != current_position.x as usize
+                    || target_position_y != current_position.y as usize
+                {
+                    set_target_position = Some((target_position_x, target_position_y));
+                    timer.reset();
+                }
             }
 
-            // for (_, other_current_position, other_target_position) in (
-            //     !&player_component,
-            //     &current_position_component,
-            //     &target_position_component,
-            // )
-            //     .join()
-            // {
-            //     //
-            // }
+            // We need to do this mutation separately in order to run the query on non-player's target_positions above
+            if let Some(set_target_position) = set_target_position {
+                for (_, target_position) in (&player_c, &mut target_position_c).join() {
+                    // Help linter
+                    #[cfg(debug_assertions)]
+                    let target_position = target_position as &mut TargetPosition;
 
-            if target_position.x != current_position.x as u32
-                || target_position.y != current_position.y as u32
-            {
-                println!(
-                    "Moving from [{}, {}] to [{}, {}]",
-                    current_position.x, current_position.y, target_position.x, target_position.y
-                );
-                timer.reset();
+                    target_position.x = set_target_position.0;
+                    target_position.y = set_target_position.1;
+
+                    println!(
+                        "Moving to [{}, {}]",
+                        set_target_position.0, set_target_position.1
+                    );
+                }
             }
         }
     }
 }
 
-// TODO: Handle collision
-// TODO: Only move when direction was requested
 impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
     type SystemData = SystemData<'a>;
 
     fn run(
         &mut self,
         (
-            player_movement_request,
-            player_component,
-            current_position_component,
-            target_position_component,
-            timer_component,
+            tile_map_r,
+            player_movement_request_r,
+            player_c,
+            current_position_c,
+            target_position_c,
+            timer_c,
         ): Self::SystemData,
     ) {
-        if let Some(direction) = player_movement_request.last_requested_direction {
+        // Last requested direction
+        if let Some(direction) = player_movement_request_r.last_requested_direction {
             handle_input(
                 (
-                    player_movement_request,
-                    player_component,
-                    current_position_component,
-                    target_position_component,
-                    timer_component,
+                    tile_map_r,
+                    player_movement_request_r,
+                    player_c,
+                    current_position_c,
+                    target_position_c,
+                    timer_c,
                 ),
                 &direction,
             );
-        } else if let Some(direction) = player_movement_request.last_requested_x_direction {
+
+        // Last requested x direction
+        } else if let Some(direction) = player_movement_request_r.last_requested_x_direction {
             handle_input(
                 (
-                    player_movement_request,
-                    player_component,
-                    current_position_component,
-                    target_position_component,
-                    timer_component,
+                    tile_map_r,
+                    player_movement_request_r,
+                    player_c,
+                    current_position_c,
+                    target_position_c,
+                    timer_c,
                 ),
                 &direction,
             );
-        } else if let Some(direction) = player_movement_request.last_requested_y_direction {
+
+        // Last requested y direction
+        } else if let Some(direction) = player_movement_request_r.last_requested_y_direction {
             handle_input(
                 (
-                    player_movement_request,
-                    player_component,
-                    current_position_component,
-                    target_position_component,
-                    timer_component,
+                    tile_map_r,
+                    player_movement_request_r,
+                    player_c,
+                    current_position_c,
+                    target_position_c,
+                    timer_c,
                 ),
                 &direction,
             );

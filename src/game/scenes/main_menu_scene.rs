@@ -34,6 +34,10 @@ impl MainMenuScene {
 }
 
 impl Scene for MainMenuScene {
+    fn dispose(&mut self, game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult {
+        Ok(())
+    }
+
     fn update(
         &mut self,
         game_state: &mut GameState,

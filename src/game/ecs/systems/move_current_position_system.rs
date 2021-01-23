@@ -18,6 +18,12 @@ impl<'a> specs::System<'a> for MoveCurrentPositionSystem {
         for (current_position, target_position, timer) in
             (&mut current_position, &target_position, &mut timer).join()
         {
+            // Help linter
+            #[cfg(debug_assertions)]
+            let current_position = current_position as &CurrentPosition;
+            #[cfg(debug_assertions)]
+            let target_position = target_position as &TargetPosition;
+
             if target_position.x as f32 != current_position.x
                 || target_position.y as f32 != current_position.y
             {

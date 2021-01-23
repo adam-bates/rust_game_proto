@@ -11,6 +11,8 @@ pub enum SceneSwitch {
 }
 
 pub trait Scene {
+    fn dispose(&mut self, game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult;
+
     fn update(
         &mut self,
         game_state: &mut GameState,
@@ -35,14 +37,9 @@ pub trait Scene {
     }
 }
 
-#[derive(Default)]
-pub struct SceneManager {
-    scene_stack: Vec<Rc<RefCell<dyn Scene>>>,
-    update_stack: Vec<Rc<RefCell<dyn Scene>>>,
-    draw_stack: Vec<Rc<RefCell<dyn Scene>>>,
-}
-
-fn build_update_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<RefCell<dyn Scene>>> {
+fn build_update_stack_from(
+    source_stack: &[Rc<RefCell<dyn Scene>>],
+) -> Vec<Rc<RefCell<dyn Scene>>> {
     let mut update_stack = vec![];
 
     if let Some((head, rest_of_stack)) = source_stack.split_last() {
@@ -56,7 +53,9 @@ fn build_update_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<Re
     update_stack
 }
 
-fn build_draw_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<RefCell<dyn Scene>>> {
+fn build_draw_stack_from(
+    source_stack: &[Rc<RefCell<dyn Scene>>],
+) -> Vec<Rc<RefCell<dyn Scene>>> {
     let mut draw_stack = vec![];
 
     if let Some((head, rest_of_stack)) = source_stack.split_last() {
@@ -70,7 +69,15 @@ fn build_draw_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<RefC
     draw_stack
 }
 
+#[derive(Default)]
+pub struct SceneManager {
+    scene_stack: Vec<Rc<RefCell<dyn Scene>>>,
+    update_stack: Vec<Rc<RefCell<dyn Scene>>>,
+    draw_stack: Vec<Rc<RefCell<dyn Scene>>>,
+}
+
 impl SceneManager {
+
     pub fn update_stack(&mut self) -> &mut Vec<Rc<RefCell<dyn Scene>>> {
         &mut self.update_stack
     }
@@ -82,15 +89,15 @@ impl SceneManager {
     pub fn push(&mut self, ctx: &mut ggez::Context, scene: Rc<RefCell<dyn Scene>>) {
         ggez::graphics::clear(ctx, ggez::graphics::BLACK);
 
-        if !scene.borrow().should_draw_previous() {
-            self.draw_stack.clear();
-        }
-        self.draw_stack.push(Rc::clone(&scene));
-
         if !scene.borrow().should_update_previous() {
             self.update_stack.clear();
         }
         self.update_stack.push(Rc::clone(&scene));
+
+        if !scene.borrow().should_draw_previous() {
+            self.draw_stack.clear();
+        }
+        self.draw_stack.push(Rc::clone(&scene));
 
         self.scene_stack.push(scene);
     }
@@ -148,11 +155,14 @@ impl SceneManager {
 
     pub fn replace_top(
         &mut self,
+        game_state: &mut GameState,
         ctx: &mut ggez::Context,
         scene_builder: SceneBuilder,
     ) -> GameResult {
         {
-            let _ = self.pop(ctx);
+            if let Some(old) = self.pop(ctx) {
+                old.borrow_mut().dispose(game_state, ctx);
+            }
         }
 
         let scene = scene_builder(ctx)?;
@@ -163,11 +173,14 @@ impl SceneManager {
 
     pub fn unchecked_replace_top(
         &mut self,
+        game_state: &mut GameState,
         ctx: &mut ggez::Context,
         scene_builder: SceneBuilder,
     ) -> GameResult {
         {
-            let _ = self.unchecked_pop(ctx);
+            self.unchecked_pop(ctx)
+                .borrow_mut()
+                .dispose(game_state, ctx);
         }
 
         let scene = scene_builder(ctx)?;
@@ -178,11 +191,14 @@ impl SceneManager {
 
     pub fn replace_all(
         &mut self,
+        game_state: &mut GameState,
         ctx: &mut ggez::Context,
         scene_builder: SceneBuilder,
     ) -> GameResult {
         while self.current().is_some() {
-            let _ = self.pop(ctx);
+            if let Some(old) = self.pop(ctx) {
+                old.borrow_mut().dispose(game_state, ctx);
+            }
         }
 
         let scene = scene_builder(ctx)?;
@@ -193,11 +209,14 @@ impl SceneManager {
 
     pub fn unchecked_replace_all(
         &mut self,
+        game_state: &mut GameState,
         ctx: &mut ggez::Context,
         scene_builder: SceneBuilder,
     ) -> GameResult {
         while self.current().is_some() {
-            let _ = self.unchecked_pop(ctx);
+            self.unchecked_pop(ctx)
+                .borrow_mut()
+                .dispose(game_state, ctx);
         }
 
         let scene = scene_builder(ctx)?;
@@ -248,6 +267,7 @@ impl SceneManager {
 
     pub fn switch(
         &mut self,
+        game_state: &mut GameState,
         ctx: &mut ggez::Context,
         switch: SceneSwitch,
     ) -> GameResult<Option<Rc<RefCell<dyn Scene>>>> {
@@ -257,8 +277,8 @@ impl SceneManager {
                 let new = builder(ctx)?;
                 self.push(ctx, new)
             }
-            SceneSwitch::ReplaceTop(builder) => self.replace_top(ctx, builder)?,
-            SceneSwitch::ReplaceAll(builder) => self.replace_all(ctx, builder)?,
+            SceneSwitch::ReplaceTop(builder) => self.replace_top(game_state, ctx, builder)?,
+            SceneSwitch::ReplaceAll(builder) => self.replace_all(game_state, ctx, builder)?,
         };
 
         Ok(None)
@@ -266,6 +286,7 @@ impl SceneManager {
 
     pub fn unchecked_switch(
         &mut self,
+        game_state: &mut GameState,
         ctx: &mut ggez::Context,
         switch: SceneSwitch,
     ) -> GameResult<Option<Rc<RefCell<dyn Scene>>>> {
@@ -275,8 +296,12 @@ impl SceneManager {
                 let new = builder(ctx)?;
                 self.push(ctx, new);
             }
-            SceneSwitch::ReplaceTop(builder) => self.unchecked_replace_top(ctx, builder)?,
-            SceneSwitch::ReplaceAll(builder) => self.unchecked_replace_all(ctx, builder)?,
+            SceneSwitch::ReplaceTop(builder) => {
+                self.unchecked_replace_top(game_state, ctx, builder)?
+            }
+            SceneSwitch::ReplaceAll(builder) => {
+                self.unchecked_replace_all(game_state, ctx, builder)?
+            }
         };
 
         Ok(None)

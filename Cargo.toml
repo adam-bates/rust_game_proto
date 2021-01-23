@@ -14,8 +14,7 @@ nalgebra = "~0.24.0"
 specs = "~0.16.1"
 specs-derive = "~0.4.1"
 
-# Custom branch off master @ ~0.5.1
-#  - last commit on master when originally branched off: https://github.com/adam-bates/ggez/commit/55ec63417dccf2e62de2db4d064e6d4dba0db7fa
+# Custom branch off master @ ~0.6.0
 #  - private repo: https://github.com/adam-bates/custom-ggez.git
 ggez = { path = "../ggez" }
 

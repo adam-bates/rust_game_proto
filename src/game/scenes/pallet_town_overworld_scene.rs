@@ -1,9 +1,8 @@
 use super::{
     config,
     ecs::{
-        components::{Player, CurrentPosition, TargetPosition},
-        resources::{Camera, CameraBounds},
-        systems::{FollowPlayerSystem, PrintSystem},
+        components::TargetPosition,
+        resources::{CameraBounds, Tile, TileMap},
     },
     error::types::GameResult,
     game_state::GameState,
@@ -57,10 +56,37 @@ impl PalletTownOverworldScene {
             }
         }
 
-        // use ggez::graphics::Drawable;
-        // sprite_batch.draw(ctx, ggez::graphics::DrawParam::default())?;
-
         let dispatcher = specs::DispatcherBuilder::new().build();
+
+        game_state.world.insert(CameraBounds {
+            min_x: 0.,
+            min_y: 0.,
+            max_x: 24.,
+            max_y: 20.,
+        });
+
+        game_state.world.insert(TileMap {
+            tiles: vec![
+                vec![
+                    Tile::new(0, 0),
+                    Tile::new(1, 0),
+                    Tile::new(2, 0),
+                    Tile::new(3, 0),
+                ],
+                vec![
+                    Tile::new(0, 1),
+                    Tile::new(1, 1),
+                    Tile::new(2, 1),
+                    Tile::new(3, 1),
+                ],
+                vec![
+                    Tile::new(0, 2),
+                    Tile::new(1, 2),
+                    Tile::new(2, 1),
+                    Tile::new(3, 2),
+                ],
+            ],
+        });
 
         Ok(Self {
             dispatcher,
@@ -77,6 +103,13 @@ impl PalletTownOverworldScene {
 }
 
 impl Scene for PalletTownOverworldScene {
+    fn dispose(&mut self, game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult {
+        game_state.world.remove::<CameraBounds>();
+        game_state.world.remove::<TileMap>();
+
+        Ok(())
+    }
+
     fn update(
         &mut self,
         game_state: &mut GameState,

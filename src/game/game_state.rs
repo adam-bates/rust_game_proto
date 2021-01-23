@@ -9,6 +9,7 @@ use super::{
     settings::{AspectRatio, Settings},
     world,
 };
+use specs::WorldExt;
 use std::{cell::RefCell, rc::Rc};
 
 #[derive(Default)]
@@ -103,8 +104,15 @@ impl events::EventHandler for GlobalState {
             scene_switch = scene.borrow_mut().update(&mut self.game_state, ctx)?;
         }
 
+        self.game_state.world.maintain();
+
         if let Some(scene_switch) = scene_switch {
-            self.scene_manager.switch(ctx, scene_switch)?;
+            if let Some(scene) =
+                self.scene_manager
+                    .switch(&mut self.game_state, ctx, scene_switch)?
+            {
+                scene.borrow_mut().dispose(&mut self.game_state, ctx);
+            }
         }
 
         Ok(())
@@ -160,6 +168,7 @@ impl events::EventHandler for GlobalState {
                 ggez::input::keyboard::KeyCode::M => {
                     println!("Replacing top");
                     self.scene_manager.replace_top(
+                        &mut self.game_state,
                         ctx,
                         Box::new(|ctx| Ok(Rc::new(RefCell::new(MainMenuScene::new(ctx)?)))),
                     )?;
@@ -178,7 +187,12 @@ impl events::EventHandler for GlobalState {
             }
 
             if let Some(scene_switch) = scene_switch {
-                self.scene_manager.switch(ctx, scene_switch)?;
+                if let Some(scene) =
+                    self.scene_manager
+                        .switch(&mut self.game_state, ctx, scene_switch)?
+                {
+                    scene.borrow_mut().dispose(&mut self.game_state, ctx);
+                }
             }
         }
 
@@ -201,7 +215,12 @@ impl events::EventHandler for GlobalState {
             }
 
             if let Some(scene_switch) = scene_switch {
-                self.scene_manager.switch(ctx, scene_switch)?;
+                if let Some(scene) =
+                    self.scene_manager
+                        .switch(&mut self.game_state, ctx, scene_switch)?
+                {
+                    scene.borrow_mut().dispose(&mut self.game_state, ctx);
+                }
             }
         }
 
@@ -225,7 +244,12 @@ impl events::EventHandler for GlobalState {
             }
 
             if let Some(scene_switch) = scene_switch {
-                self.scene_manager.switch(ctx, scene_switch)?;
+                if let Some(scene) =
+                    self.scene_manager
+                        .switch(&mut self.game_state, ctx, scene_switch)?
+                {
+                    scene.borrow_mut().dispose(&mut self.game_state, ctx);
+                }
             }
         }
 
@@ -249,7 +273,12 @@ impl events::EventHandler for GlobalState {
             }
 
             if let Some(scene_switch) = scene_switch {
-                self.scene_manager.switch(ctx, scene_switch)?;
+                if let Some(scene) =
+                    self.scene_manager
+                        .switch(&mut self.game_state, ctx, scene_switch)?
+                {
+                    scene.borrow_mut().dispose(&mut self.game_state, ctx);
+                }
             }
         }
 
@@ -300,7 +329,12 @@ impl events::EventHandler for GlobalState {
         }
 
         if let Some(scene_switch) = scene_switch {
-            self.scene_manager.switch(ctx, scene_switch)?;
+            if let Some(scene) =
+                self.scene_manager
+                    .switch(&mut self.game_state, ctx, scene_switch)?
+            {
+                scene.borrow_mut().dispose(&mut self.game_state, ctx);
+            }
         }
 
         Ok(())

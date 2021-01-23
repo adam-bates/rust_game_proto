@@ -1,5 +1,5 @@
 use super::{
-    components::{Player, CurrentPosition},
+    components::{CurrentPosition, Player},
     resources::{Camera, CameraBounds},
 };
 use specs::Join;
@@ -14,18 +14,30 @@ impl<'a> specs::System<'a> for FollowPlayerSystem {
         specs::ReadStorage<'a, CurrentPosition>,
     );
 
-    fn run(&mut self, (mut camera, camera_bounds, player, real_position): Self::SystemData) {
+    fn run(&mut self, (mut camera, camera_bounds, player, current_position): Self::SystemData) {
+        // Help linter
+        #[cfg(debug_assertions)]
+        let camera = &mut camera as &mut Camera;
+
         if let Some(camera_bounds) = camera_bounds {
-            for (_, real_position) in (&player, &real_position).join() {
+            for (_, current_position) in (&player, &current_position).join() {
+                // Help linter
+                #[cfg(debug_assertions)]
+                let current_position = current_position as &CurrentPosition;
+
                 camera.x =
-                    nalgebra::clamp(real_position.x, camera_bounds.min_x, camera_bounds.max_x);
+                    nalgebra::clamp(current_position.x, camera_bounds.min_x, camera_bounds.max_x);
                 camera.y =
-                    nalgebra::clamp(real_position.y, camera_bounds.min_y, camera_bounds.max_y);
+                    nalgebra::clamp(current_position.y, camera_bounds.min_y, camera_bounds.max_y);
             }
         } else {
-            for (_, real_position) in (&player, &real_position).join() {
-                camera.x = real_position.x;
-                camera.y = real_position.y;
+            for (_, current_position) in (&player, &current_position).join() {
+                // Help linter
+                #[cfg(debug_assertions)]
+                let current_position = current_position as &CurrentPosition;
+
+                camera.x = current_position.x;
+                camera.y = current_position.y;
             }
         }
     }

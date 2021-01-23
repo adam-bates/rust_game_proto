@@ -1,7 +1,7 @@
 use super::{
     ecs::{
         components::{CurrentPosition, Player, TargetPosition, Timer},
-        resources::{Camera, CameraBounds, PlayerMovementRequest},
+        resources::{Camera, CameraBounds, DeltaTime, PlayerMovementRequest},
         systems::{FollowPlayerSystem, MoveCurrentPositionSystem, MovePlayerTargetPositionSystem},
     },
     error::types::GameResult,
@@ -13,6 +13,7 @@ use specs::{Builder, WorldExt};
 
 pub struct OverworldScene {
     dispatcher: specs::Dispatcher<'static, 'static>,
+    entities: Vec<specs::Entity>,
 }
 
 impl OverworldScene {
@@ -25,14 +26,18 @@ impl OverworldScene {
             y: player_target_position.y as f32,
         };
 
-        let camera = Camera {
+        game_state.world.register::<Player>();
+        game_state.world.register::<CurrentPosition>();
+        game_state.world.register::<TargetPosition>();
+        game_state.world.register::<Timer>();
+        game_state.world.insert(PlayerMovementRequest::default());
+        game_state.world.insert(DeltaTime::default());
+        game_state.world.insert(Camera {
             x: player_target_position.x as f32,
             y: player_target_position.y as f32,
-        };
+        });
 
-        game_state.world.insert(camera);
-
-        let mut dispatcher = specs::DispatcherBuilder::new()
+        let dispatcher = specs::DispatcherBuilder::new()
             .with(
                 MovePlayerTargetPositionSystem,
                 "move_player_target_position_system",
@@ -46,29 +51,40 @@ impl OverworldScene {
             .with(FollowPlayerSystem, "follow_player_system", &[])
             // .with(PrintSystem, "print_system", &["follow_player_system"])
             .build();
-        dispatcher.setup(&mut game_state.world);
+        // dispatcher.setup(&mut game_state.world);
 
-        game_state
+        let player_entity = game_state
             .world
             .create_entity()
             .with(Player)
             .with(player_current_position)
             .with(player_target_position)
             .with(Timer {
-                duration: 1.0,
+                duration: 0.5,
                 repeating: true,
                 elapsed: 0.0,
                 finished: true, // Start finished to allow movement
             })
             .build();
 
-        Ok(Self { dispatcher })
+        Ok(Self {
+            dispatcher,
+            entities: vec![player_entity],
+        })
     }
 
     // TODO: Function to build from save file given a filesystem
 }
 
 impl Scene for OverworldScene {
+    fn dispose(&mut self, game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult {
+        game_state.world.remove::<Camera>();
+        game_state.world.remove::<DeltaTime>();
+        game_state.world.remove::<PlayerMovementRequest>();
+        game_state.world.delete_entities(self.entities.as_slice());
+        Ok(())
+    }
+
     fn update(
         &mut self,
         game_state: &mut GameState,
