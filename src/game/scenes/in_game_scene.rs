@@ -12,6 +12,8 @@ impl InGameScene {
     pub fn new(game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
         // TODO: Build from loaded save file
 
+        game_state.world.insert(DeltaTime::default());
+
         Ok(Self {})
     }
 
@@ -20,6 +22,7 @@ impl InGameScene {
 
 impl Scene for InGameScene {
     fn dispose(&mut self, game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult {
+        game_state.world.remove::<DeltaTime>();
         Ok(())
     }
 
@@ -27,9 +30,10 @@ impl Scene for InGameScene {
         &mut self,
         game_state: &mut GameState,
         ctx: &mut ggez::Context,
+        delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>> {
         if let Some(mut delta) = game_state.world.get_mut::<DeltaTime>() {
-            delta.duration = ggez::timer::delta(ctx);
+            delta.secs = delta_secs;
         }
 
         Ok(None)

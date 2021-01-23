@@ -42,6 +42,7 @@ impl Scene for MainMenuScene {
         &mut self,
         game_state: &mut GameState,
         ctx: &mut ggez::Context,
+        delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>> {
         Ok(None)
     }

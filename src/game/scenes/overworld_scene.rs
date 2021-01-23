@@ -1,8 +1,13 @@
+use crate::config;
+
 use super::{
     ecs::{
-        components::{CurrentPosition, Player, TargetPosition, Timer},
-        resources::{Camera, CameraBounds, DeltaTime, PlayerMovementRequest},
-        systems::{FollowPlayerSystem, MoveCurrentPositionSystem, MovePlayerTargetPositionSystem},
+        components::{CurrentPosition, Drawable, Player, TargetPosition, Timer},
+        resources::{Camera, PlayerMovementRequest},
+        systems::{
+            FollowPlayerSystem, MoveCurrentPositionSystem, MovePlayerTargetPositionSystem,
+            UpdateDrawParamSystem,
+        },
     },
     error::types::GameResult,
     game_state::GameState,
@@ -20,7 +25,7 @@ impl OverworldScene {
     pub fn new(game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
         // TODO: Build from loaded save file
 
-        let player_target_position = TargetPosition { x: 5, y: 7 };
+        let player_target_position = TargetPosition { x: 0, y: 0 };
         let player_current_position = CurrentPosition {
             x: player_target_position.x as f32,
             y: player_target_position.y as f32,
@@ -30,8 +35,8 @@ impl OverworldScene {
         game_state.world.register::<CurrentPosition>();
         game_state.world.register::<TargetPosition>();
         game_state.world.register::<Timer>();
+        game_state.world.register::<Drawable>();
         game_state.world.insert(PlayerMovementRequest::default());
-        game_state.world.insert(DeltaTime::default());
         game_state.world.insert(Camera {
             x: player_target_position.x as f32,
             y: player_target_position.y as f32,
@@ -46,12 +51,19 @@ impl OverworldScene {
             .with(
                 MoveCurrentPositionSystem,
                 "move_current_position_system",
-                &[],
+                &["move_player_target_position_system"],
             )
-            .with(FollowPlayerSystem, "follow_player_system", &[])
-            // .with(PrintSystem, "print_system", &["follow_player_system"])
+            .with(
+                FollowPlayerSystem,
+                "follow_player_system",
+                &["move_current_position_system"],
+            )
+            .with(
+                UpdateDrawParamSystem,
+                "update_draw_param_system",
+                &["follow_player_system"],
+            )
             .build();
-        // dispatcher.setup(&mut game_state.world);
 
         let player_entity = game_state
             .world
@@ -60,10 +72,24 @@ impl OverworldScene {
             .with(player_current_position)
             .with(player_target_position)
             .with(Timer {
-                duration: 0.5,
+                duration: 0.2,
                 repeating: true,
                 elapsed: 0.0,
                 finished: true, // Start finished to allow movement
+            })
+            .with(Drawable {
+                drawable: Box::new(ggez::graphics::Mesh::new_rectangle(
+                    ctx,
+                    ggez::graphics::DrawMode::fill(),
+                    ggez::graphics::Rect::new(
+                        0.,
+                        config::TILE_PIXELS_SIZE_F32 - 24.,
+                        config::TILE_PIXELS_SIZE_F32,
+                        24.,
+                    ),
+                    ggez::graphics::Color::from_rgb(200, 50, 50),
+                )?),
+                draw_params: ggez::graphics::DrawParam::default(),
             })
             .build();
 
@@ -79,9 +105,15 @@ impl OverworldScene {
 impl Scene for OverworldScene {
     fn dispose(&mut self, game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<Camera>();
-        game_state.world.remove::<DeltaTime>();
         game_state.world.remove::<PlayerMovementRequest>();
-        game_state.world.delete_entities(self.entities.as_slice());
+
+        if let Err(e) = game_state.world.delete_entities(self.entities.as_slice()) {
+            return Err(ggez::GameError::CustomError(format!(
+                "Wrong generation error when deleting entities in OverworldScene::dispose: {}",
+                e
+            )));
+        }
+
         Ok(())
     }
 
@@ -89,8 +121,8 @@ impl Scene for OverworldScene {
         &mut self,
         game_state: &mut GameState,
         ctx: &mut ggez::Context,
+        delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>> {
-        // println!("OverworldScene::update");
         self.dispatcher.dispatch(&game_state.world);
         Ok(None)
     }
@@ -105,26 +137,6 @@ impl Scene for OverworldScene {
         ctx: &mut ggez::Context,
         input: GameInput,
     ) -> GameResult<Option<SceneSwitch>> {
-        match input {
-            GameInput::Button { button, pressed } => {
-                if pressed {
-                    match button {
-                        GameButton::Start => game_state.world.insert(CameraBounds {
-                            min_x: 0.,
-                            min_y: 0.,
-                            max_x: 2.,
-                            max_y: 3.,
-                        }),
-                        GameButton::Select => {
-                            game_state.world.remove::<CameraBounds>();
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            _ => {}
-        }
-
         if let Some(player_movement_request) = game_state.world.get_mut::<PlayerMovementRequest>() {
             match input {
                 GameInput::Button { button, pressed } => match button {

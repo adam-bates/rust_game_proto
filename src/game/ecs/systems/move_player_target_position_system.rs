@@ -8,7 +8,7 @@ use specs::Join;
 pub struct MovePlayerTargetPositionSystem;
 
 type SystemData<'a> = (
-    Option<specs::Read<'a, TileMap>>,
+    Option<specs::Write<'a, TileMap>>,
     specs::Read<'a, PlayerMovementRequest>,
     specs::ReadStorage<'a, Player>,
     specs::ReadStorage<'a, CurrentPosition>,
@@ -18,7 +18,7 @@ type SystemData<'a> = (
 
 fn handle_input<'a>(
     (
-        tile_map_r,
+        mut tile_map_r,
         _player_movement_request_r,
         player_c,
         current_position_c,
@@ -27,7 +27,7 @@ fn handle_input<'a>(
     ): SystemData<'a>,
     direction: &GameDirection,
 ) {
-    if let Some(tile_map) = &tile_map_r {
+    if let Some(tile_map) = &mut tile_map_r {
         let (direction_x, direction_y) = direction.to_xy();
 
         for (_, current_position, timer) in (&player_c, &current_position_c, &mut timer_c).join() {
@@ -53,38 +53,32 @@ fn handle_input<'a>(
                     tile_map_dimensions.1 as isize - 1,
                 ) as usize;
 
-                let is_collision = false; // TODO
+                let target_tile = tile_map.get_tile(target_position_x, target_position_y);
 
-                if is_collision {
+                // Can't walk on tile
+                if target_tile.tile_type.is_some() {
                     return;
                 }
 
-                if tile_map
-                    .get_tile(target_position_x, target_position_y)
-                    .entity
-                    .is_some()
-                {
+                // Another entity is already in the target location
+                if target_tile.entity.is_some() {
                     return;
                 }
-
-                // for (_, other_current_position, other_target_position) in
-                //     (!&player_c, &current_position_c, &target_position_c).join()
-                // {
-                //     let other_current_position = other_current_position as &CurrentPosition;
-                //     let other_target_position = other_target_position as &TargetPosition;
-
-                //     if (other_current_position.x.round() as usize == target_position_x
-                //         && other_current_position.y.round() as usize == target_position_y)
-                //         || (other_target_position.x == target_position_x
-                //             && other_target_position.y == target_position_y)
-                //     {
-                //         return;
-                //     }
-                // }
 
                 if target_position_x != current_position.x as usize
                     || target_position_y != current_position.y as usize
                 {
+                    let player_entity = tile_map
+                        .get_tile_mut(current_position.x as usize, current_position.y as usize)
+                        .entity
+                        .take()
+                        .expect("Player entity isn't in tile_map @ current_position");
+
+                    tile_map
+                        .get_tile_mut(target_position_x, target_position_y)
+                        .entity
+                        .replace(player_entity);
+
                     set_target_position = Some((target_position_x, target_position_y));
                     timer.reset();
                 }

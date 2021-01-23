@@ -1,35 +1,18 @@
+#[derive(Debug)]
 pub enum TileType {
     Wall,
     Water,
     // ...
 }
 
+#[derive(Debug, Default)]
 pub struct Tile {
-    x: usize,
-    y: usize,
     pub tile_type: Option<TileType>,
     pub entity: Option<specs::Entity>,
+    pub overlay: Option<specs::Entity>,
 }
 
-impl Tile {
-    pub fn new(x: usize, y: usize) -> Self {
-        Self {
-            x,
-            y,
-            tile_type: None,
-            entity: None,
-        }
-    }
-
-    pub fn x(&self) -> usize {
-        self.x
-    }
-
-    pub fn y(&self) -> usize {
-        self.y
-    }
-}
-
+#[derive(Debug)]
 pub struct TileMap {
     pub tiles: Vec<Vec<Tile>>,
 }

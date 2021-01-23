@@ -17,6 +17,7 @@ pub trait Scene {
         &mut self,
         game_state: &mut GameState,
         ctx: &mut ggez::Context,
+        delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>>;
 
     fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult;
@@ -37,9 +38,7 @@ pub trait Scene {
     }
 }
 
-fn build_update_stack_from(
-    source_stack: &[Rc<RefCell<dyn Scene>>],
-) -> Vec<Rc<RefCell<dyn Scene>>> {
+fn build_update_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<RefCell<dyn Scene>>> {
     let mut update_stack = vec![];
 
     if let Some((head, rest_of_stack)) = source_stack.split_last() {
@@ -53,9 +52,7 @@ fn build_update_stack_from(
     update_stack
 }
 
-fn build_draw_stack_from(
-    source_stack: &[Rc<RefCell<dyn Scene>>],
-) -> Vec<Rc<RefCell<dyn Scene>>> {
+fn build_draw_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<RefCell<dyn Scene>>> {
     let mut draw_stack = vec![];
 
     if let Some((head, rest_of_stack)) = source_stack.split_last() {
@@ -77,7 +74,6 @@ pub struct SceneManager {
 }
 
 impl SceneManager {
-
     pub fn update_stack(&mut self) -> &mut Vec<Rc<RefCell<dyn Scene>>> {
         &mut self.update_stack
     }
