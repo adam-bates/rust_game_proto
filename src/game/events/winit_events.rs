@@ -147,12 +147,12 @@ fn process_device_event(
 // Main update run
 fn run_update(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> GameResult<bool> {
     let mut update_changed = false;
-    let delta_secs = ggez::timer::delta(ctx).as_secs_f32();
-    state.delta_secs += delta_secs;
+    state.delta_secs += ggez::timer::delta(ctx).as_secs_f32();
 
     while ggez::timer::check_update_time(ctx, state.game_state.settings.video_settings.target_fps) {
-        update_changed = true;
         state.update(ctx)?;
+
+        update_changed = true;
         state.delta_secs = 0.;
     }
 
