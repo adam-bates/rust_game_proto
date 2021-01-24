@@ -46,9 +46,8 @@ impl Scene for InGameScene {
         &mut self,
         _game_state: &mut GameState,
         _ctx: &mut ggez::Context,
-        input: GameInput,
+        _input: GameInput,
     ) -> GameResult<Option<SceneSwitch>> {
-        println!("{:?}", input);
         Ok(None)
     }
 }

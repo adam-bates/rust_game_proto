@@ -10,6 +10,7 @@ use super::{
     types::{Scene, SceneSwitch},
 };
 use specs::{Builder, Entity, Join, WorldExt};
+use std::sync::Arc;
 
 pub struct PalletTownOverworldScene;
 
@@ -91,7 +92,7 @@ impl PalletTownOverworldScene {
             .world
             .create_entity()
             .with(Drawable {
-                drawable: Box::new(ggez::graphics::Mesh::new_rectangle(
+                drawable: Arc::new(ggez::graphics::Mesh::new_rectangle(
                     ctx,
                     ggez::graphics::DrawMode::fill(),
                     ggez::graphics::Rect::new(
@@ -109,6 +110,7 @@ impl PalletTownOverworldScene {
 
         game_state.world.insert(TileMap {
             tiles: build_tiles(player_entity, npc_entity),
+            to_draw: vec![],
             background,
             background_param: ggez::graphics::DrawParam::default(),
         });
@@ -134,23 +136,13 @@ impl Scene for PalletTownOverworldScene {
     }
 
     fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
-        let camera = game_state.world.read_resource::<Camera>();
         let tile_map = game_state.world.read_resource::<TileMap>();
 
         use ggez::graphics::Drawable as GgezDrawable;
         tile_map.background.draw(ctx, tile_map.background_param)?;
 
-        let mut drawable_c = game_state.world.write_component::<Drawable>();
-
-        // Draw in order of y first to emulate z-axis
-        for y in camera.top..camera.bottom {
-            for x in camera.left..camera.right {
-                if let Some(entity) = tile_map.get_tile(x, y).entity {
-                    if let Some(drawable) = drawable_c.get_mut(entity) {
-                        drawable.drawable.draw(ctx, drawable.draw_params)?;
-                    }
-                }
-            }
+        for drawable in &tile_map.to_draw {
+            drawable.drawable.draw(ctx, drawable.draw_params)?;
         }
 
         Ok(())

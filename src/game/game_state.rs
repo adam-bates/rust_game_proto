@@ -49,25 +49,17 @@ impl GlobalState {
 
         let mut scene_manager = SceneManager::default();
 
-        println!("update_stack: {}", scene_manager.update_stack().len());
-
         let scene = Rc::new(RefCell::new(InGameScene::new(&mut game_state, ctx)?));
         scene_manager.push(ctx, scene);
 
-        println!("update_stack: {}", scene_manager.update_stack().len());
-
         let scene = Rc::new(RefCell::new(OverworldScene::new(&mut game_state, ctx)?));
         scene_manager.push(ctx, scene);
-
-        println!("update_stack: {}", scene_manager.update_stack().len());
 
         let scene = Rc::new(RefCell::new(PalletTownOverworldScene::new(
             &mut game_state,
             ctx,
         )?));
         scene_manager.push(ctx, scene);
-
-        println!("update_stack: {}", scene_manager.update_stack().len());
 
         Ok(Self {
             scene_manager,
@@ -99,9 +91,7 @@ impl events::EventHandler for GlobalState {
         let mut scene_switch = None;
 
         for scene in self.scene_manager.update_stack() {
-            scene_switch = scene
-                .borrow_mut()
-                .update(&mut self.game_state, ctx)?;
+            scene_switch = scene.borrow_mut().update(&mut self.game_state, ctx)?;
         }
 
         self.game_state.world.maintain();

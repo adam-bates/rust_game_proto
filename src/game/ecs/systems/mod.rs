@@ -1,9 +1,11 @@
+mod fill_tile_map_to_draw_system;
 mod follow_player_system;
 mod move_background_draw_param_system;
 mod move_current_position_system;
 mod move_player_target_position_system;
 mod update_draw_param_system;
 
+pub use fill_tile_map_to_draw_system::FillTileMapToDrawSystem;
 pub use follow_player_system::FollowPlayerSystem;
 pub use move_background_draw_param_system::MoveBackgroundDrawParamSystem;
 pub use move_current_position_system::MoveCurrentPositionSystem;

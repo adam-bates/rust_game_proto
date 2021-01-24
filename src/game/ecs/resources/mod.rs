@@ -10,4 +10,4 @@ pub use delta_time::DeltaTime;
 pub use player_movement_request::PlayerMovementRequest;
 pub use tile_map::{Tile, TileMap, TileType};
 
-use super::super::{config, input};
+use super::{super::input, components};

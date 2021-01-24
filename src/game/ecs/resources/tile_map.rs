@@ -1,3 +1,5 @@
+use super::components::Drawable;
+
 #[derive(Debug)]
 pub enum TileType {
     Wall,
@@ -5,16 +7,16 @@ pub enum TileType {
     // ...
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct Tile {
     pub tile_type: Option<TileType>,
     pub entity: Option<specs::Entity>,
     pub overlay: Option<specs::Entity>,
 }
 
-#[derive(Debug)]
 pub struct TileMap {
     pub tiles: Vec<Vec<Tile>>,
+    pub to_draw: Vec<Drawable>,
     pub background: ggez::graphics::spritebatch::SpriteBatch,
     pub background_param: ggez::graphics::DrawParam,
 }

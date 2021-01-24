@@ -4,8 +4,8 @@ use super::{
         components::{CurrentPosition, Drawable, Player, TargetPosition, Timer},
         resources::{Camera, PlayerMovementRequest},
         systems::{
-            FollowPlayerSystem, MoveBackgroundDrawParamSystem, MoveCurrentPositionSystem,
-            MovePlayerTargetPositionSystem, UpdateDrawParamSystem,
+            FillTileMapToDrawSystem, FollowPlayerSystem, MoveBackgroundDrawParamSystem,
+            MoveCurrentPositionSystem, MovePlayerTargetPositionSystem, UpdateDrawParamSystem,
         },
     },
     error::types::GameResult,
@@ -14,6 +14,7 @@ use super::{
     types::{Scene, SceneSwitch},
 };
 use specs::{Builder, WorldExt};
+use std::sync::Arc;
 
 pub struct OverworldScene {
     dispatcher: specs::Dispatcher<'static, 'static>,
@@ -68,6 +69,11 @@ impl OverworldScene {
                 "move_background_draw_param_system",
                 &["follow_player_system"],
             )
+            .with(
+                FillTileMapToDrawSystem,
+                "fill_tile_map_to_draw_system",
+                &["follow_player_system"],
+            )
             .build();
 
         let player_entity = game_state
@@ -83,7 +89,7 @@ impl OverworldScene {
                 finished: true, // Start finished to allow movement
             })
             .with(Drawable {
-                drawable: Box::new(ggez::graphics::Mesh::new_rectangle(
+                drawable: Arc::new(ggez::graphics::Mesh::new_rectangle(
                     ctx,
                     ggez::graphics::DrawMode::fill(),
                     ggez::graphics::Rect::new(
