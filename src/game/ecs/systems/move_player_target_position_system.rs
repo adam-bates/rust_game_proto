@@ -132,11 +132,6 @@ fn handle_input<'a>(
 
                     target_position.x = set_target_position.0;
                     target_position.y = set_target_position.1;
-
-                    println!(
-                        "Moving to [{}, {}]",
-                        set_target_position.0, set_target_position.1
-                    );
                 }
             }
         }
