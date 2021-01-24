@@ -16,10 +16,8 @@ use std::{cell::RefCell, rc::Rc};
 pub struct InputState {
     // TODO: Do we need both?
     // Could we do: gamepad_axis_x/y and set it to the configured stick?
-    pub gamepad_left_axis_x: f32,
-    pub gamepad_left_axis_y: f32,
-    pub gamepad_right_axis_x: f32,
-    pub gamepad_right_axis_y: f32,
+    pub gamepad_axis_x: f32,
+    pub gamepad_axis_y: f32,
 }
 
 pub struct GameState {
@@ -180,7 +178,9 @@ impl events::EventHandler for GlobalState {
                 // ggez::event::KeyCode::S => self.settings.save(),
                 _ => {}
             }
-        } else if let Some(game_input) = GameInput::from_keycode(&keycode, true) {
+        } else if let Some(game_input) =
+            GameInput::from_keycode(&keycode, true, &self.game_state.settings)
+        {
             let mut scene_switch = None;
 
             for scene in self.scene_manager.update_stack() {
@@ -208,7 +208,9 @@ impl events::EventHandler for GlobalState {
         ctx: &mut ggez::Context,
         keycode: ggez::input::keyboard::KeyCode,
     ) -> GameResult {
-        if let Some(game_input) = GameInput::from_keycode(&keycode, false) {
+        if let Some(game_input) =
+            GameInput::from_keycode(&keycode, false, &self.game_state.settings)
+        {
             let mut scene_switch = None;
 
             for scene in self.scene_manager.update_stack() {
@@ -237,7 +239,9 @@ impl events::EventHandler for GlobalState {
         btn: gilrs::Button,
         _id: ggez::input::gamepad::GamepadId,
     ) -> GameResult {
-        if let Some(game_input) = GameInput::from_gamepad_button(&btn, true) {
+        if let Some(game_input) =
+            GameInput::from_gamepad_button(&btn, true, &self.game_state.settings)
+        {
             let mut scene_switch = None;
 
             for scene in self.scene_manager.update_stack() {
@@ -266,7 +270,9 @@ impl events::EventHandler for GlobalState {
         btn: gilrs::Button,
         _id: ggez::input::gamepad::GamepadId,
     ) -> GameResult {
-        if let Some(game_input) = GameInput::from_gamepad_button(&btn, false) {
+        if let Some(game_input) =
+            GameInput::from_gamepad_button(&btn, false, &self.game_state.settings)
+        {
             let mut scene_switch = None;
 
             for scene in self.scene_manager.update_stack() {
@@ -296,29 +302,37 @@ impl events::EventHandler for GlobalState {
         value: f32,
         _id: ggez::input::gamepad::GamepadId,
     ) -> GameResult {
-        match axis {
-            gilrs::ev::Axis::LeftStickX => {
-                self.game_state.input_state.gamepad_left_axis_x = value;
-            }
-            gilrs::ev::Axis::LeftStickY => {
-                self.game_state.input_state.gamepad_left_axis_y = value;
-            }
-            gilrs::ev::Axis::RightStickX => {
-                self.game_state.input_state.gamepad_right_axis_x = value;
-            }
-            gilrs::ev::Axis::RightStickY => {
-                self.game_state.input_state.gamepad_right_axis_y = value;
-            }
-            _ => return Ok(()),
+        let controller_settings = &self.game_state.settings.game_settings.controller_settings;
+
+        if axis
+            == controller_settings
+                .controller_axis_mappings
+                .controller_x_axis
+        {
+            self.game_state.input_state.gamepad_axis_x =
+                if controller_settings.controller_axis_mappings.invert_x {
+                    -value
+                } else {
+                    value
+                };
+        } else if axis
+            == controller_settings
+                .controller_axis_mappings
+                .controller_y_axis
+        {
+            self.game_state.input_state.gamepad_axis_y =
+                if controller_settings.controller_axis_mappings.invert_y {
+                    -value
+                } else {
+                    value
+                };
+        } else {
+            return Ok(());
         }
 
-        let gamepad_axis_x = self.game_state.input_state.gamepad_left_axis_x;
-        let gamepad_axis_y = self.game_state.input_state.gamepad_left_axis_y;
-        let controller_stick_deadzone = self
-            .game_state
-            .settings
-            .game_settings
-            .controller_stick_deadzone;
+        let gamepad_axis_x = self.game_state.input_state.gamepad_axis_x;
+        let gamepad_axis_y = self.game_state.input_state.gamepad_axis_y;
+        let controller_stick_deadzone = controller_settings.controller_stick_deadzone;
 
         let game_input =
             GameInput::from_gamepad_axes(gamepad_axis_x, gamepad_axis_y, controller_stick_deadzone);

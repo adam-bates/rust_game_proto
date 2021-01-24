@@ -8,6 +8,7 @@ edition = "2018"
 directories = "~3.0.1"
 serde = "~1.0"
 serde_derive = "~1.0"
+serde_with = "~1.6.0"
 toml = "~0.5.8"
 nalgebra = "~0.24.0"
 
@@ -19,8 +20,8 @@ specs-derive = "~0.4.1"
 ggez = { path = "../ggez" }
 
 # Needs to be compatible with ggez
-winit = "~0.24.0"
-gilrs = "~0.8.0"
+winit = { version = "~0.24.0", features = ["serde"] }
+gilrs = { version = "~0.8.0", features = ["serde-serialize"] }
 
 chrono = "~0.4.19"
 

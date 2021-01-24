@@ -1,3 +1,5 @@
+pub mod settings;
+
 mod context;
 mod ecs;
 mod events;
@@ -7,7 +9,6 @@ mod game_state;
 mod input;
 mod render;
 mod scenes;
-mod settings;
 mod world;
 
 use super::{config, error, filesystem};

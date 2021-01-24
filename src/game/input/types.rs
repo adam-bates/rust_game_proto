@@ -1,5 +1,7 @@
+use super::settings::Settings;
 use ggez::input::keyboard::KeyCode;
 use gilrs::Button;
+use serde_derive::{Deserialize, Serialize};
 
 const NEG_3_PI_BY_4: f32 = -3. * std::f32::consts::FRAC_PI_4;
 const NEG_PI_BY_4: f32 = -1. * std::f32::consts::FRAC_PI_4;
@@ -30,7 +32,7 @@ impl GameDirection {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum GameButton {
     Up,
     Down,
@@ -49,46 +51,28 @@ pub enum GameInput {
 }
 
 impl GameInput {
-    pub fn from_keycode(keycode: &KeyCode, pressed: bool) -> Option<Self> {
-        match *keycode {
-            KeyCode::W | KeyCode::Up => Some(Self::Button {
-                button: GameButton::Up,
-                pressed,
-            }),
-            KeyCode::S | KeyCode::Down => Some(Self::Button {
-                button: GameButton::Down,
-                pressed,
-            }),
-            KeyCode::A | KeyCode::Left => Some(Self::Button {
-                button: GameButton::Left,
-                pressed,
-            }),
-            KeyCode::D | KeyCode::Right => Some(Self::Button {
-                button: GameButton::Right,
-                pressed,
-            }),
-            KeyCode::Return => Some(Self::Button {
-                button: GameButton::Primary,
-                pressed,
-            }),
-            KeyCode::LShift | KeyCode::RShift => Some(Self::Button {
-                button: GameButton::Secondary,
-                pressed,
-            }),
-            KeyCode::Escape => Some(Self::Button {
-                button: GameButton::Start,
-                pressed,
-            }),
-            KeyCode::Delete | KeyCode::Back => Some(Self::Button {
-                button: GameButton::Select,
-                pressed,
-            }),
-            _ => None,
-        }
+    pub fn from_keycode(keycode: &KeyCode, pressed: bool, settings: &Settings) -> Option<Self> {
+        settings
+            .game_settings
+            .keyboard_settings
+            .keyboard_mappings
+            .get(keycode)
+            .cloned()
+            .map(|button| Self::Button { button, pressed })
     }
 
-    pub fn from_gamepad_button(button: &Button, pressed: bool) -> Option<Self> {
-        None
+    pub fn from_gamepad_button(
+        button: &Button,
+        pressed: bool,
+        settings: &Settings,
+    ) -> Option<Self> {
+        settings
+            .game_settings
+            .controller_settings
+            .controller_button_mappings
+            .get(button)
+            .cloned()
+            .map(|button| Self::Button { button, pressed })
     }
 
     pub fn from_gamepad_axes(axis_x: f32, axis_y: f32, deadzone: f32) -> Self {
@@ -115,19 +99,5 @@ impl GameInput {
         return Self::Direction {
             direction: Some(direction),
         };
-    }
-
-    pub fn to_game_button(self) -> Option<GameButton> {
-        match self {
-            GameInput::Button { button, .. } => Some(button),
-            _ => None,
-        }
-    }
-
-    pub fn to_game_direction(self) -> Option<Option<GameDirection>> {
-        match self {
-            GameInput::Direction { direction } => Some(direction),
-            _ => None,
-        }
     }
 }

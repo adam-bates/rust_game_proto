@@ -1,7 +1,8 @@
-use super::{config, GameResult};
-use ggez::conf::FullscreenType;
+use super::{config, input::types::GameButton, GameResult};
+use ggez::{conf::FullscreenType, input::keyboard::KeyCode};
 use serde_derive::{Deserialize, Serialize};
-use std::io;
+use serde_with::serde_as;
+use std::{collections::HashMap, io};
 use toml;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -72,27 +73,121 @@ impl Default for VideoSettings {
     }
 }
 
+fn build_default_controller_button_mappings() -> HashMap<gilrs::Button, GameButton> {
+    let mut mappings = HashMap::new();
+    mappings.insert(gilrs::Button::DPadUp, GameButton::Up);
+    mappings.insert(gilrs::Button::DPadDown, GameButton::Down);
+    mappings.insert(gilrs::Button::DPadLeft, GameButton::Left);
+    mappings.insert(gilrs::Button::DPadRight, GameButton::Right);
+    mappings.insert(gilrs::Button::Start, GameButton::Start);
+    mappings.insert(gilrs::Button::Select, GameButton::Select);
+    mappings.insert(gilrs::Button::Mode, GameButton::Start);
+    mappings.insert(gilrs::Button::North, GameButton::Secondary);
+    mappings.insert(gilrs::Button::East, GameButton::Primary);
+    mappings.insert(gilrs::Button::South, GameButton::Primary);
+    mappings.insert(gilrs::Button::West, GameButton::Secondary);
+    mappings
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ControllerAxisMappings {
+    pub controller_x_axis: gilrs::Axis,
+    pub controller_y_axis: gilrs::Axis,
+    pub invert_x: bool,
+    pub invert_y: bool,
+}
+
+impl Default for ControllerAxisMappings {
+    fn default() -> Self {
+        Self {
+            controller_x_axis: gilrs::Axis::LeftStickX,
+            controller_y_axis: gilrs::Axis::LeftStickY,
+            invert_x: false,
+            invert_y: false,
+        }
+    }
+}
+
+#[serde_as]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ControllerSettings {
+    #[serde_as(as = "Vec<(_, _)>")]
+    pub controller_button_mappings: HashMap<gilrs::Button, GameButton>,
+
+    pub controller_stick_deadzone: f32,
+    pub controller_axis_mappings: ControllerAxisMappings,
+}
+
+impl Default for ControllerSettings {
+    fn default() -> Self {
+        Self {
+            controller_stick_deadzone: 0.5,
+            controller_button_mappings: build_default_controller_button_mappings(),
+            controller_axis_mappings: ControllerAxisMappings::default(),
+        }
+    }
+}
+
+fn build_default_keyboard_mappings() -> HashMap<KeyCode, GameButton> {
+    let mut mappings = HashMap::new();
+    mappings.insert(KeyCode::Up, GameButton::Up);
+    mappings.insert(KeyCode::Down, GameButton::Down);
+    mappings.insert(KeyCode::Left, GameButton::Left);
+    mappings.insert(KeyCode::Right, GameButton::Right);
+    mappings.insert(KeyCode::W, GameButton::Up);
+    mappings.insert(KeyCode::A, GameButton::Down);
+    mappings.insert(KeyCode::S, GameButton::Left);
+    mappings.insert(KeyCode::D, GameButton::Right);
+    mappings.insert(KeyCode::Return, GameButton::Primary);
+    mappings.insert(KeyCode::LShift, GameButton::Secondary);
+    mappings.insert(KeyCode::RShift, GameButton::Secondary);
+    mappings.insert(KeyCode::Escape, GameButton::Start);
+    mappings.insert(KeyCode::Delete, GameButton::Select);
+    mappings.insert(KeyCode::Back, GameButton::Select);
+    mappings
+}
+
+#[serde_as]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct KeyboardSettings {
+    #[serde_as(as = "Vec<(_, _)>")]
+    pub keyboard_mappings: HashMap<KeyCode, GameButton>,
+}
+
+impl Default for KeyboardSettings {
+    fn default() -> Self {
+        Self {
+            keyboard_mappings: build_default_keyboard_mappings(),
+        }
+    }
+}
+
 // Controls (input mapping), locale, font, text-speed, ui-border-type
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameSettings {
-    pub controller_stick_deadzone: f32,
+    #[serde(rename = "controller")]
+    pub controller_settings: ControllerSettings,
+
+    #[serde(rename = "keyboard")]
+    pub keyboard_settings: KeyboardSettings,
     // input_mapping,
     // locale,
     // font,
     // text_speed,
-    // ui_border_type,
+    // ui_border_type
 }
 
 impl Default for GameSettings {
     fn default() -> Self {
         Self {
-            controller_stick_deadzone: 0.5,
+            controller_settings: ControllerSettings::default(),
+            keyboard_settings: KeyboardSettings::default(),
         }
     }
 }
 
 impl GameSettings {
-    fn apply(&self, ctx: &mut ggez::Context) -> GameResult {
+    fn apply(&self, _ctx: &mut ggez::Context) -> GameResult {
         Ok(())
     }
 }
@@ -104,7 +199,7 @@ pub struct AudioSettings {
 }
 
 impl AudioSettings {
-    fn apply(&self, ctx: &mut ggez::Context) -> GameResult {
+    fn apply(&self, _ctx: &mut ggez::Context) -> GameResult {
         Ok(())
     }
 }

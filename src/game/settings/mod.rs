@@ -3,7 +3,7 @@ pub mod types;
 
 pub use types::{AspectRatio, Settings};
 
-use super::{config, error::types::GameResult, filesystem};
+use super::{config, error::types::GameResult, filesystem, input};
 use serialize::{load_settings, save_settings};
 
 pub fn find_or_default_for_user(

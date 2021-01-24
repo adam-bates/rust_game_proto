@@ -6,22 +6,22 @@ use super::{
     types::{Scene, SceneSwitch},
 };
 
-pub struct InGameScene {}
+pub struct InGameScene;
 
 impl InGameScene {
-    pub fn new(game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
+    pub fn new(game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult<Self> {
         // TODO: Build from loaded save file
 
         game_state.world.insert(DeltaTime::default());
 
-        Ok(Self {})
+        Ok(Self)
     }
 
     // TODO: Function to build from save file given a filesystem
 }
 
 impl Scene for InGameScene {
-    fn dispose(&mut self, game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult {
+    fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<DeltaTime>();
         Ok(())
     }
@@ -29,7 +29,7 @@ impl Scene for InGameScene {
     fn update(
         &mut self,
         game_state: &mut GameState,
-        ctx: &mut ggez::Context,
+        _ctx: &mut ggez::Context,
         delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>> {
         if let Some(mut delta) = game_state.world.get_mut::<DeltaTime>() {
@@ -39,16 +39,17 @@ impl Scene for InGameScene {
         Ok(None)
     }
 
-    fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
+    fn draw(&self, _game_state: &GameState, _ctx: &mut ggez::Context) -> GameResult {
         Ok(())
     }
 
     fn input(
         &mut self,
-        game_state: &mut GameState,
-        ctx: &mut ggez::Context,
+        _game_state: &mut GameState,
+        _ctx: &mut ggez::Context,
         input: GameInput,
     ) -> GameResult<Option<SceneSwitch>> {
+        println!("{:?}", input);
         Ok(None)
     }
 }
