@@ -1,12 +1,11 @@
-use crate::config;
-
 use super::{
+    config,
     ecs::{
         components::{CurrentPosition, Drawable, Player, TargetPosition, Timer},
         resources::{Camera, PlayerMovementRequest},
         systems::{
-            FollowPlayerSystem, MoveCurrentPositionSystem, MovePlayerTargetPositionSystem,
-            UpdateDrawParamSystem,
+            FollowPlayerSystem, MoveBackgroundDrawParamSystem, MoveCurrentPositionSystem,
+            MovePlayerTargetPositionSystem, UpdateDrawParamSystem,
         },
     },
     error::types::GameResult,
@@ -40,6 +39,7 @@ impl OverworldScene {
         game_state.world.insert(Camera {
             x: player_target_position.x as f32,
             y: player_target_position.y as f32,
+            ..Default::default()
         });
 
         let dispatcher = specs::DispatcherBuilder::new()
@@ -61,6 +61,11 @@ impl OverworldScene {
             .with(
                 UpdateDrawParamSystem,
                 "update_draw_param_system",
+                &["follow_player_system"],
+            )
+            .with(
+                MoveBackgroundDrawParamSystem,
+                "move_background_draw_param_system",
                 &["follow_player_system"],
             )
             .build();

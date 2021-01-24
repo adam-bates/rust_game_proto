@@ -15,6 +15,8 @@ pub struct Tile {
 #[derive(Debug)]
 pub struct TileMap {
     pub tiles: Vec<Vec<Tile>>,
+    pub background: ggez::graphics::spritebatch::SpriteBatch,
+    pub background_param: ggez::graphics::DrawParam,
 }
 
 impl TileMap {

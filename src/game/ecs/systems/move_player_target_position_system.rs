@@ -1,7 +1,8 @@
 use super::{
     components::{CurrentPosition, Player, TargetPosition, Timer},
+    config,
     input::types::GameDirection,
-    resources::{PlayerMovementRequest, TileMap},
+    resources::{Camera, PlayerMovementRequest, TileMap},
 };
 use specs::Join;
 
@@ -10,6 +11,7 @@ pub struct MovePlayerTargetPositionSystem;
 type SystemData<'a> = (
     Option<specs::Write<'a, TileMap>>,
     specs::Read<'a, PlayerMovementRequest>,
+    specs::Read<'a, Camera>,
     specs::ReadStorage<'a, Player>,
     specs::ReadStorage<'a, CurrentPosition>,
     specs::WriteStorage<'a, TargetPosition>,
@@ -20,6 +22,7 @@ fn handle_input<'a>(
     (
         mut tile_map_r,
         _player_movement_request_r,
+        camera_r,
         player_c,
         current_position_c,
         mut target_position_c,
@@ -81,6 +84,42 @@ fn handle_input<'a>(
 
                     set_target_position = Some((target_position_x, target_position_y));
                     timer.reset();
+
+                    // Update background tiles to draw
+                    let (max_x, max_y) = tile_map.dimensions();
+
+                    let inverse_background_width = 1. / max_x as f32;
+                    let inverse_background_height = 1. / max_y as f32;
+
+                    let left = (camera_r.x as isize - 1).max(0) as usize;
+                    let right =
+                        (camera_r.x as usize + config::VIEWPORT_TILES_WIDTH_USIZE + 1).min(max_x);
+                    let top = (camera_r.y as isize - 1).max(0) as usize;
+                    let bottom =
+                        (camera_r.y as usize + config::VIEWPORT_TILES_HEIGHT_USIZE + 1).min(max_y);
+
+                    tile_map.background.clear();
+
+                    for y in top..bottom {
+                        for x in left..right {
+                            tile_map.background.add(
+                                ggez::graphics::DrawParam::default()
+                                    .src(
+                                        [
+                                            x as f32 * inverse_background_width,
+                                            y as f32 * inverse_background_height,
+                                            inverse_background_width,
+                                            inverse_background_height,
+                                        ]
+                                        .into(),
+                                    )
+                                    .dest([
+                                        x as f32 * config::TILE_PIXELS_SIZE_F32,
+                                        y as f32 * config::TILE_PIXELS_SIZE_F32,
+                                    ]),
+                            );
+                        }
+                    }
                 }
             }
 
@@ -112,6 +151,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
         (
             tile_map_r,
             player_movement_request_r,
+            camera_r,
             player_c,
             current_position_c,
             target_position_c,
@@ -124,6 +164,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                 (
                     tile_map_r,
                     player_movement_request_r,
+                    camera_r,
                     player_c,
                     current_position_c,
                     target_position_c,
@@ -138,6 +179,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                 (
                     tile_map_r,
                     player_movement_request_r,
+                    camera_r,
                     player_c,
                     current_position_c,
                     target_position_c,
@@ -152,6 +194,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                 (
                     tile_map_r,
                     player_movement_request_r,
+                    camera_r,
                     player_c,
                     current_position_c,
                     target_position_c,

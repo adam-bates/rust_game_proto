@@ -157,7 +157,7 @@ impl SceneManager {
     ) -> GameResult {
         {
             if let Some(old) = self.pop(ctx) {
-                old.borrow_mut().dispose(game_state, ctx);
+                old.borrow_mut().dispose(game_state, ctx)?;
             }
         }
 
@@ -176,7 +176,7 @@ impl SceneManager {
         {
             self.unchecked_pop(ctx)
                 .borrow_mut()
-                .dispose(game_state, ctx);
+                .dispose(game_state, ctx)?;
         }
 
         let scene = scene_builder(ctx)?;
@@ -193,7 +193,7 @@ impl SceneManager {
     ) -> GameResult {
         while self.current().is_some() {
             if let Some(old) = self.pop(ctx) {
-                old.borrow_mut().dispose(game_state, ctx);
+                old.borrow_mut().dispose(game_state, ctx)?;
             }
         }
 
@@ -212,7 +212,7 @@ impl SceneManager {
         while self.current().is_some() {
             self.unchecked_pop(ctx)
                 .borrow_mut()
-                .dispose(game_state, ctx);
+                .dispose(game_state, ctx)?;
         }
 
         let scene = scene_builder(ctx)?;
