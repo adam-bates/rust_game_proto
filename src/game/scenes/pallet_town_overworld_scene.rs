@@ -129,7 +129,6 @@ impl Scene for PalletTownOverworldScene {
         &mut self,
         _game_state: &mut GameState,
         _ctx: &mut ggez::Context,
-        _delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>> {
         Ok(None)
     }

@@ -147,18 +147,28 @@ fn process_device_event(
 // Main update run
 fn run_update(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> GameResult<bool> {
     let mut update_changed = false;
-    state.delta_secs += ggez::timer::delta(ctx).as_secs_f32();
 
-    if ggez::timer::check_update_time(ctx, state.game_state.settings.video_settings.target_fps) {
+    // Manually fixing time-steps to optimize
+    while ctx.timer_context.residual_update_dt
+        > state
+            .game_state
+            .settings
+            .video_settings
+            .inverse_target_fps_duration
+    {
         state.update(ctx)?;
 
         update_changed = true;
-        state.delta_secs = 0.;
+        ctx.timer_context.residual_update_dt -= state
+            .game_state
+            .settings
+            .video_settings
+            .inverse_target_fps_duration;
     }
 
     if !update_changed {
         // Give CPU room to breathe
-        ggez::timer::yield_now();
+        std::thread::yield_now();
     }
 
     Ok(update_changed)
@@ -178,9 +188,6 @@ fn run_draw(
             .render_state
             .render_target
             .draw(state, ctx)?;
-    } else {
-        // Give CPU room to breathe
-        std::thread::yield_now();
     }
 
     ggez::graphics::present(ctx)?;

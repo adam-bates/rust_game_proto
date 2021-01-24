@@ -108,7 +108,7 @@ impl OverworldScene {
 }
 
 impl Scene for OverworldScene {
-    fn dispose(&mut self, game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult {
+    fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<Camera>();
         game_state.world.remove::<PlayerMovementRequest>();
 
@@ -125,14 +125,13 @@ impl Scene for OverworldScene {
     fn update(
         &mut self,
         game_state: &mut GameState,
-        ctx: &mut ggez::Context,
-        delta_secs: f32,
+        _ctx: &mut ggez::Context,
     ) -> GameResult<Option<SceneSwitch>> {
         self.dispatcher.dispatch(&game_state.world);
         Ok(None)
     }
 
-    fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
+    fn draw(&self, _game_state: &GameState, _ctx: &mut ggez::Context) -> GameResult {
         Ok(())
     }
 

@@ -40,14 +40,13 @@ impl Scene for MainMenuScene {
 
     fn update(
         &mut self,
-        game_state: &mut GameState,
-        ctx: &mut ggez::Context,
-        delta_secs: f32,
+        _game_state: &mut GameState,
+        _ctx: &mut ggez::Context,
     ) -> GameResult<Option<SceneSwitch>> {
         Ok(None)
     }
 
-    fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
+    fn draw(&self, _game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
         ggez::graphics::clear(ctx, ggez::graphics::WHITE);
         ggez::graphics::draw(ctx, &self.mesh, self.mesh_param.rotation(self.rotation))?;
 
@@ -56,11 +55,10 @@ impl Scene for MainMenuScene {
 
     fn input(
         &mut self,
-        game_state: &mut GameState,
+        _game_state: &mut GameState,
         ctx: &mut ggez::Context,
         input: GameInput,
     ) -> GameResult<Option<SceneSwitch>> {
-        // println!("input: {:?}", input);
         if ggez::input::keyboard::is_mod_active(ctx, ggez::input::keyboard::KeyMods::CTRL) {
             match input {
                 GameInput::Button { button, .. } => match button {

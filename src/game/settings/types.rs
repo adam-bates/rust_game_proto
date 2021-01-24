@@ -32,6 +32,12 @@ pub struct VideoSettings {
 
     pub target_fps: u32,
 
+    #[serde(skip)]
+    pub inverse_target_fps: f32,
+
+    #[serde(skip)]
+    pub inverse_target_fps_duration: std::time::Duration,
+
     pub vsync: bool,
 
     pub srgb: bool,
@@ -67,6 +73,8 @@ impl Default for VideoSettings {
             fullscreen_type: FullscreenType::Windowed,
             aspect_ratio: AspectRatio::Stretch,
             target_fps: 144, // TODO
+            inverse_target_fps: 1. / 144.,
+            inverse_target_fps_duration: std::time::Duration::from_secs_f32(1. / 144.),
             vsync: true,
             srgb: true,
         }
@@ -233,7 +241,11 @@ impl Settings {
         let mut encoded = String::new();
         file.read_to_string(&mut encoded)?;
 
-        let settings = toml::from_str(&encoded)?;
+        let mut settings: Settings = toml::from_str(&encoded)?;
+        settings.video_settings.inverse_target_fps = 1. / settings.video_settings.target_fps as f32;
+        settings.video_settings.inverse_target_fps_duration =
+            std::time::Duration::from_secs_f32(settings.video_settings.inverse_target_fps);
+
         Ok(settings)
     }
 
