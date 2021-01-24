@@ -149,7 +149,7 @@ fn run_update(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> G
     let mut update_changed = false;
     state.delta_secs += ggez::timer::delta(ctx).as_secs_f32();
 
-    while ggez::timer::check_update_time(ctx, state.game_state.settings.video_settings.target_fps) {
+    if ggez::timer::check_update_time(ctx, state.game_state.settings.video_settings.target_fps) {
         state.update(ctx)?;
 
         update_changed = true;
