@@ -2,14 +2,13 @@ use super::{
     config,
     ecs::{
         components::{CurrentPosition, Drawable, Player, TargetPosition},
-        resources::{CameraBounds, Tile, TileMap},
+        resources::{CameraBounds, Frame, Tile, TileMap},
     },
     error::types::GameResult,
     game_state::GameState,
     input::types::GameInput,
     types::{Scene, SceneSwitch},
 };
-use config::VIEWPORT_TILES_WIDTH_USIZE;
 use specs::{Builder, Entity, Join, WorldExt};
 use std::sync::Arc;
 
@@ -97,50 +96,6 @@ impl PalletTownOverworldScene {
             5, 15, 15, 21, 37, 38, 38, 38, 38, 38, 38, 39, 35, 15, 21, 21, 26, 2, 17, 16, 32, 33,
             22, 23, 24, 35, 15, 21, 15, 37, 38, 38, 38, 38, 38, 38, 39, 21, 21, 15, 21, 31, 17,
         ];
-        for y in 0..config::VIEWPORT_TILES_HEIGHT_USIZE {
-            for x in 0..config::VIEWPORT_TILES_WIDTH_USIZE {
-                println!(
-                    "x: {}, y: {}, checking: {}",
-                    x,
-                    y,
-                    background_spritesheet_tile_width * y + x
-                );
-                let tile_idx = tile_data[background_width * y + x];
-                println!(
-                    "Got: {}, setting x: {}, y: {}",
-                    tile_idx,
-                    ((tile_idx - 1) % background_spritesheet_tile_width) as f32
-                        * inverse_background_spritesheet_tile_width,
-                    ((tile_idx - 1) / background_spritesheet_tile_width) as f32
-                        * inverse_background_spritesheet_tile_height
-                );
-                println!(
-                    "Placing [{}, {}] at [{}, {}]",
-                    x,
-                    y,
-                    x as f32 * config::TILE_PIXELS_SIZE_F32,
-                    y as f32 * config::TILE_PIXELS_SIZE_F32
-                );
-                background.add(
-                    ggez::graphics::DrawParam::default()
-                        .src(
-                            [
-                                ((tile_idx - 1) % background_spritesheet_tile_width) as f32
-                                    * inverse_background_spritesheet_tile_width,
-                                ((tile_idx - 1) / background_spritesheet_tile_width) as f32
-                                    * inverse_background_spritesheet_tile_height,
-                                inverse_background_spritesheet_tile_width,
-                                inverse_background_spritesheet_tile_height,
-                            ]
-                            .into(),
-                        )
-                        .dest([
-                            x as f32 * config::TILE_PIXELS_SIZE_F32,
-                            y as f32 * config::TILE_PIXELS_SIZE_F32,
-                        ]),
-                );
-            }
-        }
 
         game_state.world.insert(CameraBounds {
             min_x: 0.,
@@ -175,6 +130,10 @@ impl PalletTownOverworldScene {
         game_state.world.insert(TileMap {
             tiles: build_tiles(player_entity, npc_entity),
             tile_indices: tile_data.to_vec(),
+            animation: vec![Frame {
+                idx: 0,
+                tile_ids: vec![37, 44],
+            }],
             sprite_sheet_width: background_spritesheet_tile_width,
             sprite_sheet_height: background_spritesheet_tile_height,
             to_draw: vec![],

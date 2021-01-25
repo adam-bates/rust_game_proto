@@ -2,10 +2,11 @@ use super::{
     config,
     ecs::{
         components::{CurrentPosition, Drawable, Player, TargetPosition, Timer},
-        resources::{Camera, PlayerMovementRequest},
+        resources::{Camera, PlayerMovementRequest, ShouldUpdateBackgroundTiles},
         systems::{
-            FillTileMapToDrawSystem, FollowPlayerSystem, MoveBackgroundDrawParamSystem,
-            MoveCurrentPositionSystem, MovePlayerTargetPositionSystem, UpdateDrawParamSystem,
+            AnimateBackgroundSystem, FillTileMapToDrawSystem, FollowPlayerSystem,
+            MoveBackgroundDrawParamSystem, MoveCurrentPositionSystem,
+            MovePlayerTargetPositionSystem, UpdateBackgroundTilesSystem, UpdateDrawParamSystem,
         },
     },
     error::types::GameResult,
@@ -42,6 +43,7 @@ impl OverworldScene {
             y: player_target_position.y as f32,
             ..Default::default()
         });
+        game_state.world.insert(ShouldUpdateBackgroundTiles(true));
 
         let dispatcher = specs::DispatcherBuilder::new()
             .with(
@@ -73,6 +75,21 @@ impl OverworldScene {
                 FillTileMapToDrawSystem,
                 "fill_tile_map_to_draw_system",
                 &["follow_player_system"],
+            )
+            .with(
+                AnimateBackgroundSystem {
+                    timer: Timer::new(std::time::Duration::from_secs_f32(0.5), true),
+                },
+                "animate_background_system",
+                &[],
+            )
+            .with(
+                UpdateBackgroundTilesSystem,
+                "update_background_tiles_system",
+                &[
+                    "animate_background_system",
+                    "move_player_target_position_system",
+                ],
             )
             .build();
 

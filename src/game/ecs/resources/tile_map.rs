@@ -14,9 +14,15 @@ pub struct Tile {
     pub overlay: Option<specs::Entity>,
 }
 
+pub struct Frame {
+    pub idx: usize,
+    pub tile_ids: Vec<usize>,
+}
+
 pub struct TileMap {
     pub tiles: Vec<Vec<Tile>>,
-    pub tile_indices: Vec<usize>, // TODO
+    pub tile_indices: Vec<usize>, // TODO: x,y?
+    pub animation: Vec<Frame>,
     pub sprite_sheet_width: usize,
     pub sprite_sheet_height: usize,
     pub to_draw: Vec<Drawable>,
