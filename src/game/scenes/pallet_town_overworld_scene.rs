@@ -9,6 +9,7 @@ use super::{
     input::types::GameInput,
     types::{Scene, SceneSwitch},
 };
+use config::VIEWPORT_TILES_WIDTH_F32;
 use specs::{Builder, Entity, Join, WorldExt};
 use std::sync::Arc;
 
@@ -56,6 +57,8 @@ impl PalletTownOverworldScene {
 
         let background = ggez::graphics::spritebatch::SpriteBatch::new(image);
 
+        let background_width = 25;
+        let background_height = 20;
         let tile_data = [
             2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 17, 16, 32,
             10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 31, 17,
@@ -87,8 +90,8 @@ impl PalletTownOverworldScene {
         game_state.world.insert(CameraBounds {
             min_x: 0.,
             min_y: 0.,
-            max_x: 6.,
-            max_y: 9.,
+            max_x: background_width as f32 - config::VIEWPORT_TILES_WIDTH_F32,
+            max_y: background_height as f32 - config::VIEWPORT_TILES_HEIGHT_F32,
         });
 
         let player_position = (0, 0);
