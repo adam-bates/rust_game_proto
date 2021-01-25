@@ -41,6 +41,7 @@ impl GameState {
 pub struct GlobalState {
     pub scene_manager: SceneManager,
     pub game_state: GameState,
+    pub delta_secs: f32,
 }
 
 impl GlobalState {
@@ -64,6 +65,7 @@ impl GlobalState {
         Ok(Self {
             scene_manager,
             game_state,
+            delta_secs: 0.,
         })
     }
 
@@ -91,7 +93,7 @@ impl events::EventHandler for GlobalState {
         let mut scene_switch = None;
 
         for scene in self.scene_manager.update_stack() {
-            scene_switch = scene.borrow_mut().update(&mut self.game_state, ctx)?;
+            scene_switch = scene.borrow_mut().update(&mut self.game_state, ctx, self.delta_secs)?;
         }
 
         self.game_state.world.maintain();

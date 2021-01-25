@@ -54,24 +54,8 @@ impl PalletTownOverworldScene {
         let background_spritesheet_tile_height =
             image.height() as usize / config::TILE_PIXELS_SIZE_USIZE;
 
-        let mut background = ggez::graphics::spritebatch::SpriteBatch::new(image);
+        let background = ggez::graphics::spritebatch::SpriteBatch::new(image);
 
-        let inverse_background_spritesheet_tile_width =
-            1. / background_spritesheet_tile_width as f32;
-        let inverse_background_spritesheet_tile_height =
-            1. / background_spritesheet_tile_height as f32;
-
-        println!(
-            "Background dimensions: [{}, {}]",
-            background_spritesheet_tile_width, background_spritesheet_tile_height
-        );
-        println!(
-            "Inverse: [{}, {}]",
-            inverse_background_spritesheet_tile_width, inverse_background_spritesheet_tile_height
-        );
-
-        let background_width = 25;
-        let background_height = 20;
         let tile_data = [
             2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 17, 16, 32,
             10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 10, 41, 31, 17,
@@ -95,7 +79,10 @@ impl PalletTownOverworldScene {
             34, 34, 22, 23, 23, 23, 23, 23, 23, 24, 20, 21, 21, 21, 31, 17, 2, 1, 25, 3, 4, 4, 4,
             5, 15, 15, 21, 37, 38, 38, 38, 38, 38, 38, 39, 35, 15, 21, 21, 26, 2, 17, 16, 32, 33,
             22, 23, 24, 35, 15, 21, 15, 37, 38, 38, 38, 38, 38, 38, 39, 21, 21, 15, 21, 31, 17,
-        ];
+        ]
+        .iter_mut()
+        .map(|n| *n - 1)
+        .collect();
 
         game_state.world.insert(CameraBounds {
             min_x: 0.,
@@ -129,11 +116,17 @@ impl PalletTownOverworldScene {
 
         game_state.world.insert(TileMap {
             tiles: build_tiles(player_entity, npc_entity),
-            tile_indices: tile_data.to_vec(),
-            animation: vec![Frame {
-                idx: 0,
-                tile_ids: vec![37, 44],
-            }],
+            tile_indices: tile_data,
+            animation: vec![
+                Frame {
+                    idx: 0,
+                    tile_ids: vec![37, 44],
+                },
+                Frame {
+                    idx: 0,
+                    tile_ids: vec![22, 29],
+                },
+            ],
             sprite_sheet_width: background_spritesheet_tile_width,
             sprite_sheet_height: background_spritesheet_tile_height,
             to_draw: vec![],
@@ -157,6 +150,7 @@ impl Scene for PalletTownOverworldScene {
         &mut self,
         _game_state: &mut GameState,
         _ctx: &mut ggez::Context,
+        _delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>> {
         Ok(None)
     }

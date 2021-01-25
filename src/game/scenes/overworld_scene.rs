@@ -79,6 +79,7 @@ impl OverworldScene {
             .with(
                 AnimateBackgroundSystem {
                     timer: Timer::new(std::time::Duration::from_secs_f32(0.5), true),
+                    frame_map: std::collections::HashMap::default(),
                 },
                 "animate_background_system",
                 &[],
@@ -89,6 +90,7 @@ impl OverworldScene {
                 &[
                     "animate_background_system",
                     "move_player_target_position_system",
+                    "follow_player_system",
                 ],
             )
             .build();
@@ -149,6 +151,7 @@ impl Scene for OverworldScene {
         &mut self,
         game_state: &mut GameState,
         _ctx: &mut ggez::Context,
+        _delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>> {
         self.dispatcher.dispatch(&game_state.world);
         Ok(None)
@@ -161,7 +164,7 @@ impl Scene for OverworldScene {
     fn input(
         &mut self,
         game_state: &mut GameState,
-        ctx: &mut ggez::Context,
+        _ctx: &mut ggez::Context,
         input: GameInput,
     ) -> GameResult<Option<SceneSwitch>> {
         if let Some(player_movement_request) = game_state.world.get_mut::<PlayerMovementRequest>() {

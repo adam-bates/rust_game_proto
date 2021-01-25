@@ -147,52 +147,44 @@ fn process_device_event(
 // Main update run
 fn run_update(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> GameResult<bool> {
     let mut update_changed = false;
+    state.delta_secs = state.game_state.settings.video_settings.inverse_target_fps;
 
-    // Manually fixing time-steps to optimize
-    while ctx.timer_context.residual_update_dt
-        > state
-            .game_state
-            .settings
-            .video_settings
-            .inverse_target_fps_duration
-    {
+    let inverse_target_fps_duration = state
+        .game_state
+        .settings
+        .video_settings
+        .inverse_target_fps_duration;
+
+    // Manually checking time-steps to optimize
+    while ctx.timer_context.residual_update_dt > inverse_target_fps_duration {
         state.update(ctx)?;
 
         update_changed = true;
-        ctx.timer_context.residual_update_dt -= state
-            .game_state
-            .settings
-            .video_settings
-            .inverse_target_fps_duration;
+        ctx.timer_context.residual_update_dt -= inverse_target_fps_duration;
     }
 
     if !update_changed {
         // Give CPU room to breathe
         std::thread::yield_now();
+        core::sync::atomic::spin_loop_hint();
+
+        const EPSILON_DURATION: std::time::Duration = std::time::Duration::from_nanos(1);
+        std::thread::sleep(EPSILON_DURATION);
     }
 
     Ok(update_changed)
 }
 
 // Main draw run
-fn run_draw(
-    ctx: &mut ggez::Context,
-    state: &game_state::GlobalState,
-    state_changed: bool,
-) -> GameResult {
-    // Only update context if game-state has changed
-    if state_changed {
-        // Let render target call draw on state
-        state
-            .game_state
-            .render_state
-            .render_target
-            .draw(state, ctx)?;
-    }
+fn run_draw(ctx: &mut ggez::Context, state: &game_state::GlobalState) -> GameResult {
+    // Let render target call draw on state
+    state
+        .game_state
+        .render_state
+        .render_target
+        .draw(state, ctx)?;
 
-    ggez::graphics::present(ctx)?;
-
-    Ok(())
+    ggez::graphics::present(ctx)
 }
 
 pub fn process_event(
@@ -208,8 +200,9 @@ pub fn process_event(
 
             super::process_gamepad(ctx, state)?;
 
-            let state_changed = run_update(ctx, state)?;
-            run_draw(ctx, &state, state_changed)?;
+            if run_update(ctx, state)? {
+                run_draw(ctx, &state)?;
+            }
         }
         _ => {}
     }

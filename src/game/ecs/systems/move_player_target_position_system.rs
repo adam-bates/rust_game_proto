@@ -1,8 +1,7 @@
 use super::{
     components::{CurrentPosition, Player, TargetPosition, Timer},
-    config,
     input::types::GameDirection,
-    resources::{Camera, PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
+    resources::{PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
 };
 use specs::Join;
 
@@ -11,7 +10,6 @@ pub struct MovePlayerTargetPositionSystem;
 type SystemData<'a> = (
     Option<specs::Write<'a, TileMap>>,
     specs::Read<'a, PlayerMovementRequest>,
-    specs::Read<'a, Camera>,
     specs::Write<'a, ShouldUpdateBackgroundTiles>,
     specs::ReadStorage<'a, Player>,
     specs::ReadStorage<'a, CurrentPosition>,
@@ -23,7 +21,6 @@ fn handle_input<'a>(
     (
         mut tile_map_r,
         _player_movement_request_r,
-        camera_r,
         mut should_update_background_tiles_r,
         player_c,
         current_position_c,
@@ -114,8 +111,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
         (
             tile_map_r,
             player_movement_request_r,
-            camera_r,
-            mut should_update_background_tiles_r,
+            should_update_background_tiles_r,
             player_c,
             current_position_c,
             target_position_c,
@@ -128,7 +124,6 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                 (
                     tile_map_r,
                     player_movement_request_r,
-                    camera_r,
                     should_update_background_tiles_r,
                     player_c,
                     current_position_c,
@@ -144,7 +139,6 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                 (
                     tile_map_r,
                     player_movement_request_r,
-                    camera_r,
                     should_update_background_tiles_r,
                     player_c,
                     current_position_c,
@@ -160,7 +154,6 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                 (
                     tile_map_r,
                     player_movement_request_r,
-                    camera_r,
                     should_update_background_tiles_r,
                     player_c,
                     current_position_c,

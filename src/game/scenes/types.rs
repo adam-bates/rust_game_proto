@@ -17,6 +17,7 @@ pub trait Scene {
         &mut self,
         game_state: &mut GameState,
         ctx: &mut ggez::Context,
+        delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>>;
 
     fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult;

@@ -30,9 +30,10 @@ impl Scene for InGameScene {
         &mut self,
         game_state: &mut GameState,
         _ctx: &mut ggez::Context,
+        delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>> {
         if let Some(mut delta) = game_state.world.get_mut::<DeltaTime>() {
-            delta.secs = game_state.settings.video_settings.inverse_target_fps;
+            delta.secs = delta_secs;
         }
 
         Ok(None)

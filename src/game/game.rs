@@ -11,6 +11,8 @@ pub fn run_game(
     let (mut user_settings, first_load) = settings::find_or_default_for_user(&mut fs)?;
     let (mut ctx, events_loop) = context::new_context(fs, &user_settings)?;
 
+    user_settings.apply(&mut ctx)?;
+
     if first_load {
         settings::initialize_first_load(&mut ctx, &mut user_settings)?;
     }
