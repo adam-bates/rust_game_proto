@@ -16,6 +16,9 @@ pub struct Tile {
 
 pub struct TileMap {
     pub tiles: Vec<Vec<Tile>>,
+    pub tile_indices: Vec<usize>, // TODO
+    pub sprite_sheet_width: usize,
+    pub sprite_sheet_height: usize,
     pub to_draw: Vec<Drawable>,
     pub background: ggez::graphics::spritebatch::SpriteBatch,
     pub background_param: ggez::graphics::DrawParam,
