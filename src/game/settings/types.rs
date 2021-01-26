@@ -45,7 +45,7 @@ pub struct VideoSettings {
 }
 
 impl VideoSettings {
-    fn apply(&self, ctx: &mut ggez::Context) -> GameResult {
+    fn apply(&mut self, ctx: &mut ggez::Context) -> GameResult {
         {
             if self.fullscreen_type == ggez::conf::FullscreenType::Windowed {
                 ggez::graphics::set_drawable_size(
@@ -61,9 +61,18 @@ impl VideoSettings {
             );
         }
 
+        {
+            self.inverse_target_fps = 1. / self.target_fps as f32;
+            self.inverse_target_fps_duration =
+                std::time::Duration::from_secs_f32(self.inverse_target_fps);
+        }
+
         Ok(())
     }
 }
+
+const DEFAULT_FPS_U32: u32 = 60;
+const DEFAULT_INVERSE_FPS_F32: f32 = 1. / DEFAULT_FPS_U32 as f32;
 
 impl Default for VideoSettings {
     fn default() -> Self {
@@ -72,9 +81,11 @@ impl Default for VideoSettings {
             windowed_height: config::VIEWPORT_PIXELS_HEIGHT_USIZE,
             fullscreen_type: FullscreenType::Windowed,
             aspect_ratio: AspectRatio::Stretch,
-            target_fps: 144, // TODO
-            inverse_target_fps: 1. / 144.,
-            inverse_target_fps_duration: std::time::Duration::from_secs_f32(1. / 144.),
+            target_fps: DEFAULT_FPS_U32,
+            inverse_target_fps: DEFAULT_INVERSE_FPS_F32,
+            inverse_target_fps_duration: std::time::Duration::from_secs_f32(
+                DEFAULT_INVERSE_FPS_F32,
+            ),
             vsync: true,
             srgb: true,
         }
@@ -143,8 +154,8 @@ fn build_default_keyboard_mappings() -> HashMap<KeyCode, GameButton> {
     mappings.insert(KeyCode::Left, GameButton::Left);
     mappings.insert(KeyCode::Right, GameButton::Right);
     mappings.insert(KeyCode::W, GameButton::Up);
-    mappings.insert(KeyCode::A, GameButton::Down);
-    mappings.insert(KeyCode::S, GameButton::Left);
+    mappings.insert(KeyCode::S, GameButton::Down);
+    mappings.insert(KeyCode::A, GameButton::Left);
     mappings.insert(KeyCode::D, GameButton::Right);
     mappings.insert(KeyCode::Return, GameButton::Primary);
     mappings.insert(KeyCode::LShift, GameButton::Secondary);
@@ -170,7 +181,7 @@ impl Default for KeyboardSettings {
     }
 }
 
-// Controls (input mapping), locale, font, text-speed, ui-border-type
+// locale, font, text-speed, ui-border-type
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameSettings {
     #[serde(rename = "controller")]
@@ -178,7 +189,6 @@ pub struct GameSettings {
 
     #[serde(rename = "keyboard")]
     pub keyboard_settings: KeyboardSettings,
-    // input_mapping,
     // locale,
     // font,
     // text_speed,
@@ -225,7 +235,7 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn apply(&self, ctx: &mut ggez::Context) -> GameResult {
+    pub fn apply(&mut self, ctx: &mut ggez::Context) -> GameResult {
         {
             ggez::graphics::set_mode(ctx, self.into())?;
         }
@@ -241,12 +251,7 @@ impl Settings {
         let mut encoded = String::new();
         file.read_to_string(&mut encoded)?;
 
-        let mut settings: Settings = toml::from_str(&encoded)?;
-        settings.video_settings.inverse_target_fps = 1. / settings.video_settings.target_fps as f32;
-        settings.video_settings.inverse_target_fps_duration =
-            std::time::Duration::from_secs_f32(settings.video_settings.inverse_target_fps);
-
-        Ok(settings)
+        Ok(toml::from_str(&encoded)?)
     }
 
     pub fn to_toml_file<W: io::Write>(&self, file: &mut W) -> GameResult {
@@ -271,6 +276,16 @@ impl Into<ggez::conf::WindowMode> for &Settings {
             resizable: true,
             visible: true,
         }
+    }
+}
+impl Into<ggez::conf::WindowMode> for &mut Settings {
+    fn into(self) -> ggez::conf::WindowMode {
+        (&*self).into()
+    }
+}
+impl Into<ggez::conf::WindowMode> for Settings {
+    fn into(self) -> ggez::conf::WindowMode {
+        (&self).into()
     }
 }
 

@@ -93,7 +93,9 @@ impl events::EventHandler for GlobalState {
         let mut scene_switch = None;
 
         for scene in self.scene_manager.update_stack() {
-            scene_switch = scene.borrow_mut().update(&mut self.game_state, ctx, self.delta_secs)?;
+            scene_switch = scene
+                .borrow_mut()
+                .update(&mut self.game_state, ctx, self.delta_secs)?;
         }
 
         self.game_state.world.maintain();
