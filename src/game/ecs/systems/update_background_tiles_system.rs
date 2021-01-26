@@ -24,6 +24,7 @@ impl<'a> specs::System<'a> for UpdateBackgroundTilesSystem {
                 let (max_x, _) = tile_map.dimensions();
 
                 tile_map.background.clear();
+                tile_map.overlay.clear();
 
                 let sprite_sheet_width = tile_map.sprite_sheet_width;
                 let inverse_sprite_sheet_width = 1. / tile_map.sprite_sheet_width as f32;
@@ -50,6 +51,27 @@ impl<'a> specs::System<'a> for UpdateBackgroundTilesSystem {
                                     y as f32 * config::TILE_PIXELS_SIZE_F32,
                                 ]),
                         );
+
+                        if let Some(overlay_idx) = tile_map.overlay_indices[max_x * y + x] {
+                            tile_map.overlay.add(
+                                ggez::graphics::DrawParam::default()
+                                    .src(
+                                        [
+                                            (overlay_idx % sprite_sheet_width) as f32
+                                                * inverse_sprite_sheet_width,
+                                            (overlay_idx / sprite_sheet_width) as f32
+                                                * inverse_sprite_sheet_height,
+                                            inverse_sprite_sheet_width,
+                                            inverse_sprite_sheet_height,
+                                        ]
+                                        .into(),
+                                    )
+                                    .dest([
+                                        x as f32 * config::TILE_PIXELS_SIZE_F32,
+                                        y as f32 * config::TILE_PIXELS_SIZE_F32,
+                                    ]),
+                            );
+                        }
                     }
                 }
             }

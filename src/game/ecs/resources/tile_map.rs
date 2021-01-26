@@ -21,11 +21,13 @@ pub struct Frame {
 
 pub struct TileMap {
     pub tiles: Vec<Vec<Tile>>,
-    pub tile_indices: Vec<usize>, // TODO: x,y?
+    pub tile_indices: Vec<usize>,
+    pub overlay_indices: Vec<Option<usize>>,
     pub animation: Vec<Frame>,
     pub sprite_sheet_width: usize,
     pub sprite_sheet_height: usize,
     pub to_draw: Vec<Drawable>,
+    pub overlay: ggez::graphics::spritebatch::SpriteBatch,
     pub background: ggez::graphics::spritebatch::SpriteBatch,
     pub background_param: ggez::graphics::DrawParam,
 }
