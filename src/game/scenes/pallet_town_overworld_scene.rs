@@ -184,9 +184,9 @@ impl Scene for PalletTownOverworldScene {
     }
 
     fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
+        use ggez::graphics::Drawable;
         let tile_map = game_state.world.read_resource::<TileMap>();
 
-        use ggez::graphics::Drawable as GgezDrawable;
         tile_map.background.draw(ctx, tile_map.background_param)?;
 
         for drawable in &tile_map.to_draw {
