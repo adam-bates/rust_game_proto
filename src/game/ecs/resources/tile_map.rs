@@ -1,13 +1,6 @@
-use super::components::Drawable;
+use super::{components::Drawable, maps::TileType};
 
-#[derive(Debug)]
-pub enum TileType {
-    Wall,
-    Water,
-    // ...
-}
-
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Tile {
     pub tile_type: Option<TileType>,
     pub entity: Option<specs::Entity>,

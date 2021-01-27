@@ -295,7 +295,7 @@ impl Into<ggez::conf::WindowSetup> for &Settings {
             vsync: self.video_settings.vsync,
             srgb: self.video_settings.srgb,
             title: config::APPLICATION_NAME.to_string(),
-            icon: "/background_pallet_town.png".to_string(), // TODO
+            icon: "/spritesheets/pallet_town_spritesheet.png".to_string(), // TODO
             samples: ggez::conf::NumSamples::Zero,
         }
     }

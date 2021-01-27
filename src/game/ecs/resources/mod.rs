@@ -10,6 +10,9 @@ pub use camera_bounds::CameraBounds;
 pub use delta_time::DeltaTime;
 pub use player_movement_request::PlayerMovementRequest;
 pub use should_update::ShouldUpdateBackgroundTiles;
-pub use tile_map::{Frame, Tile, TileMap, TileType};
+pub use tile_map::{Frame, Tile, TileMap};
 
-use super::{super::input, components};
+use super::{
+    super::{input, maps},
+    components,
+};

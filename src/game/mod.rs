@@ -7,6 +7,7 @@ mod game;
 mod game_loop;
 mod game_state;
 mod input;
+mod maps;
 mod render;
 mod scenes;
 mod world;
