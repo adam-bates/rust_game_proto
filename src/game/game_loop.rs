@@ -10,14 +10,14 @@ fn setup_global_subscriber() -> impl Drop {
         .with_thread_names(true)
         .with_thread_ids(false);
 
-    let (flame_layer, _guard) = FlameLayer::with_file("./tracing/tracing.folded").unwrap();
+    let (flame_layer, guard) = FlameLayer::with_file("./tracing/tracing.folded").unwrap();
 
     tracing_subscriber::registry()
         .with(fmt_layer)
         .with(flame_layer)
         .init();
 
-    _guard
+    guard
 }
 
 // Main game loop
