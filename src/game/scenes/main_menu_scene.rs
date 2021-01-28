@@ -34,7 +34,7 @@ impl MainMenuScene {
 }
 
 impl Scene for MainMenuScene {
-    fn dispose(&mut self, game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult {
+    fn dispose(&mut self, _game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         Ok(())
     }
 
@@ -42,7 +42,7 @@ impl Scene for MainMenuScene {
         &mut self,
         _game_state: &mut GameState,
         _ctx: &mut ggez::Context,
-        delta_secs: f32,
+        _delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>> {
         Ok(None)
     }

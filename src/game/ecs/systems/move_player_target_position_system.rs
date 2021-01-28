@@ -1,6 +1,5 @@
 use super::{
     components::{CurrentPosition, FacingDirection, Player, TargetPosition, Timer},
-    config,
     input::types::GameDirection,
     maps::TileType,
     resources::{PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
