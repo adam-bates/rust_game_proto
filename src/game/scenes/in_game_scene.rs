@@ -20,12 +20,19 @@ impl InGameScene {
     // TODO: Function to build from save file given a filesystem
 }
 
+impl std::fmt::Debug for InGameScene {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!("{} {{ ... }}", self.name()))
+    }
+}
+
 impl Scene for InGameScene {
     fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<DeltaTime>();
         Ok(())
     }
 
+    #[tracing::instrument]
     fn update(
         &mut self,
         game_state: &mut GameState,
@@ -39,6 +46,7 @@ impl Scene for InGameScene {
         Ok(None)
     }
 
+    #[tracing::instrument]
     fn draw(&self, _game_state: &GameState, _ctx: &mut ggez::Context) -> GameResult {
         Ok(())
     }
@@ -50,5 +58,9 @@ impl Scene for InGameScene {
         _input: GameInput,
     ) -> GameResult<Option<SceneSwitch>> {
         Ok(None)
+    }
+
+    fn name(&self) -> &str {
+        "InGameScene"
     }
 }

@@ -3,7 +3,7 @@ use specs_derive::Component;
 
 // Thanks Bevy for this timer implementation
 
-#[derive(Default, Component)]
+#[derive(Default, Component, Debug)]
 #[storage(VecStorage)]
 pub struct Timer {
     pub duration: f32,

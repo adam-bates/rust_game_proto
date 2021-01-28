@@ -36,6 +36,8 @@ pub trait Scene {
     fn should_update_previous(&self) -> bool {
         false
     }
+
+    fn name(&self) -> &str;
 }
 
 fn build_update_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<RefCell<dyn Scene>>> {
@@ -71,6 +73,38 @@ pub struct SceneManager {
     scene_stack: Vec<Rc<RefCell<dyn Scene>>>,
     update_stack: Vec<Rc<RefCell<dyn Scene>>>,
     draw_stack: Vec<Rc<RefCell<dyn Scene>>>,
+}
+
+impl std::fmt::Debug for SceneManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.scene_stack.len() == 0 {
+            return f
+                .write_str("SceneManager {{ scene_stack: [], update_top_n: 0, draw_top_n: 0 }}");
+        }
+
+        let first_scene_name = self.scene_stack[0].borrow().name().to_string();
+
+        if self.scene_stack.len() == 1 {
+            return f.write_str(&format!(
+                "SceneManager {{ scene_stack: [{}], update_top_n: 1, draw_top_n: 1 }}",
+                first_scene_name,
+            ));
+        }
+
+        let scene_stack_names = self
+            .scene_stack
+            .iter()
+            .skip(1)
+            .map(|s| s.borrow().name().to_string())
+            .fold(first_scene_name, |acc, name| format!("{}, {}", acc, name));
+
+        f.write_str(&format!(
+            "SceneManager {{ scene_stack: [{}], update_top_n: {}, draw_top_n: {} }}",
+            scene_stack_names,
+            self.update_stack.len(),
+            self.draw_stack.len(),
+        ))
+    }
 }
 
 impl SceneManager {

@@ -27,6 +27,12 @@ pub struct GameState {
     pub settings: Settings,
 }
 
+impl std::fmt::Debug for GameState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("GameState { ... }")
+    }
+}
+
 impl GameState {
     fn new(ctx: &mut ggez::Context, settings: Settings) -> GameResult<Self> {
         Ok(Self {
@@ -38,6 +44,7 @@ impl GameState {
     }
 }
 
+#[derive(Debug)]
 pub struct GlobalState {
     pub scene_manager: SceneManager,
     pub game_state: GameState,
@@ -89,6 +96,7 @@ impl GlobalState {
 }
 
 impl events::EventHandler for GlobalState {
+    #[tracing::instrument(name = "GlobalState::update")]
     fn update(&mut self, ctx: &mut ggez::Context) -> GameResult {
         let mut scene_switch = None;
 
@@ -112,6 +120,8 @@ impl events::EventHandler for GlobalState {
         Ok(())
     }
 
+
+    #[tracing::instrument(name = "GlobalState::draw")]
     fn draw(&self, ctx: &mut ggez::Context) -> GameResult {
         for scene in self.scene_manager.draw_stack() {
             scene.borrow().draw(&self.game_state, ctx)?;

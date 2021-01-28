@@ -160,6 +160,12 @@ impl OverworldScene {
     // TODO: Function to build from save file given a filesystem
 }
 
+impl std::fmt::Debug for OverworldScene {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!("{} {{ ... }}", self.name()))
+    }
+}
+
 impl Scene for OverworldScene {
     fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<Camera>();
@@ -175,6 +181,7 @@ impl Scene for OverworldScene {
         Ok(())
     }
 
+    #[tracing::instrument]
     fn update(
         &mut self,
         game_state: &mut GameState,
@@ -185,6 +192,7 @@ impl Scene for OverworldScene {
         Ok(None)
     }
 
+    #[tracing::instrument]
     fn draw(&self, _game_state: &GameState, _ctx: &mut ggez::Context) -> GameResult {
         Ok(())
     }
@@ -293,5 +301,9 @@ impl Scene for OverworldScene {
 
     fn should_update_previous(&self) -> bool {
         true
+    }
+
+    fn name(&self) -> &str {
+        "OverworldScene"
     }
 }

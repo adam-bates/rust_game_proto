@@ -5,6 +5,7 @@ use super::{
 };
 use specs::Join;
 
+#[derive(Debug)]
 pub struct FollowPlayerSystem;
 
 impl<'a> specs::System<'a> for FollowPlayerSystem {
@@ -16,6 +17,13 @@ impl<'a> specs::System<'a> for FollowPlayerSystem {
         specs::ReadStorage<'a, CurrentPosition>,
     );
 
+    #[tracing::instrument(skip(
+        camera_r,
+        camera_bounds_r,
+        tile_map_r,
+        player_c,
+        current_position_c
+    ), name = "FollowPlayerSystem")]
     fn run(
         &mut self,
         (mut camera_r, camera_bounds_r, tile_map_r, player_c, current_position_c): Self::SystemData,

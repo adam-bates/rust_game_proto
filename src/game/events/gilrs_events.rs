@@ -1,6 +1,7 @@
 use super::{game_state, EventHandler, GameResult};
 use ggez::input::gamepad::GamepadId;
 
+#[tracing::instrument]
 pub fn process_gamepad(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> GameResult {
     while let Some(gilrs::Event { id, event, .. }) = ctx.gamepad_context.next_event() {
         match event {

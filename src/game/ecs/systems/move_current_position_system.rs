@@ -4,6 +4,7 @@ use super::{
 };
 use specs::Join;
 
+#[derive(Debug)]
 pub struct MoveCurrentPositionSystem;
 
 impl<'a> specs::System<'a> for MoveCurrentPositionSystem {
@@ -14,6 +15,7 @@ impl<'a> specs::System<'a> for MoveCurrentPositionSystem {
         specs::Read<'a, DeltaTime>,
     );
 
+    #[tracing::instrument(skip(current_position_c, target_position_c, timer_c, delta_r), name = "MoveCurrentPositionSystem")]
     fn run(
         &mut self,
         (mut current_position_c, mut target_position_c, mut timer_c, delta_r): Self::SystemData,

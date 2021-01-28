@@ -3,6 +3,7 @@ use super::{
     resources::{Camera, ShouldUpdateBackgroundTiles, TileMap},
 };
 
+#[derive(Debug)]
 pub struct UpdateBackgroundTilesSystem;
 
 impl<'a> specs::System<'a> for UpdateBackgroundTilesSystem {
@@ -12,6 +13,7 @@ impl<'a> specs::System<'a> for UpdateBackgroundTilesSystem {
         Option<specs::Write<'a, TileMap>>,
     );
 
+    #[tracing::instrument(skip(should_update_background_tiles_r, camera_r, tile_map_r), name = "UpdateBackgroundTilesSystem")]
     fn run(
         &mut self,
         (mut should_update_background_tiles_r, camera_r, tile_map_r): Self::SystemData,

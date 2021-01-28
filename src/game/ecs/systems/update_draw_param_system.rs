@@ -5,6 +5,7 @@ use super::{
 };
 use specs::Join;
 
+#[derive(Debug)]
 pub struct UpdateDrawParamSystem;
 
 impl<'a> specs::System<'a> for UpdateDrawParamSystem {
@@ -14,6 +15,7 @@ impl<'a> specs::System<'a> for UpdateDrawParamSystem {
         specs::WriteStorage<'a, Drawable>,
     );
 
+    #[tracing::instrument(skip(camera_r, current_position_c, drawable_c), name = "UpdateDrawParamSystem")]
     fn run(&mut self, (camera_r, current_position_c, mut drawable_c): Self::SystemData) {
         // Move drawable to current_position
         for (current_position, drawable) in (&current_position_c, &mut drawable_c).join() {

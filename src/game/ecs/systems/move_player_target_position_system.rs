@@ -7,6 +7,7 @@ use super::{
 };
 use specs::Join;
 
+#[derive(Debug)]
 pub struct MovePlayerTargetPositionSystem;
 
 type SystemData<'a> = (
@@ -150,6 +151,17 @@ fn handle_input<'a>(
 impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
     type SystemData = SystemData<'a>;
 
+    #[tracing::instrument(skip(
+        tile_map_r,
+        player_movement_request_r,
+        should_update_background_tiles_r,
+        player_c,
+        current_position_c,
+        target_position_c,
+        timer_c,
+        sprite_sheet_c,
+        facing_direction_c,
+    ), name = "MovePlayerTargetPositionSystem")]
     fn run(
         &mut self,
         (

@@ -33,11 +33,18 @@ impl MainMenuScene {
     }
 }
 
+impl std::fmt::Debug for MainMenuScene {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!("{} {{ ... }}", self.name()))
+    }
+}
+
 impl Scene for MainMenuScene {
     fn dispose(&mut self, _game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         Ok(())
     }
 
+    #[tracing::instrument]
     fn update(
         &mut self,
         _game_state: &mut GameState,
@@ -47,6 +54,7 @@ impl Scene for MainMenuScene {
         Ok(None)
     }
 
+    #[tracing::instrument]
     fn draw(&self, _game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
         ggez::graphics::clear(ctx, ggez::graphics::WHITE);
         ggez::graphics::draw(ctx, &self.mesh, self.mesh_param.rotation(self.rotation))?;
@@ -71,5 +79,9 @@ impl Scene for MainMenuScene {
             }
         }
         Ok(None)
+    }
+
+    fn name(&self) -> &str {
+        "MainMenuScene"
     }
 }

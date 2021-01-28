@@ -10,6 +10,7 @@ use ggez::{
 };
 use winit::dpi;
 
+#[tracing::instrument]
 fn process_window_event(
     ctx: &mut ggez::Context,
     state: &mut game_state::GlobalState,
@@ -128,6 +129,7 @@ fn process_window_event(
     Ok(())
 }
 
+#[tracing::instrument]
 fn process_device_event(
     ctx: &mut ggez::Context,
     _state: &mut game_state::GlobalState,
@@ -145,6 +147,7 @@ fn process_device_event(
 }
 
 // Main update run
+#[tracing::instrument]
 fn run_update(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> GameResult<bool> {
     let mut update_changed = false;
     state.delta_secs = state.game_state.settings.video_settings.inverse_target_fps;
@@ -155,27 +158,35 @@ fn run_update(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> G
         .video_settings
         .inverse_target_fps_duration;
 
-    // Manually checking time-steps to optimize
-    while ctx.timer_context.residual_update_dt > inverse_target_fps_duration {
-        state.update(ctx)?;
+    tracing::info_span!("WHILE TIME_STEP").in_scope(|| {
+        // Manually checking time-steps to optimize
+        while ctx.timer_context.residual_update_dt > inverse_target_fps_duration {
+            tracing::info_span!("INSIDE TIME_STEP").in_scope(|| {
+                state.update(ctx).unwrap(); // TODO: "?"
 
-        update_changed = true;
-        ctx.timer_context.residual_update_dt -= inverse_target_fps_duration;
-    }
+                update_changed = true;
+                ctx.timer_context.residual_update_dt -= inverse_target_fps_duration;
+            });
+        }
+    });
 
-    if !update_changed {
-        // Give CPU room to breathe
-        std::thread::yield_now();
-        core::sync::atomic::spin_loop_hint();
-
-        const EPSILON_DURATION: std::time::Duration = std::time::Duration::from_nanos(1);
-        std::thread::sleep(EPSILON_DURATION);
-    }
+    tracing::info_span!("Unchanged CPU yield").in_scope(|| {
+        if !update_changed {
+            // Give CPU room to breathe
+            tracing::info_span!("yield_now").in_scope(|| {
+                std::thread::yield_now();
+            });
+            tracing::info_span!("spin_loop_hint").in_scope(|| {
+                core::sync::atomic::spin_loop_hint();
+            });
+        }
+    });
 
     Ok(update_changed)
 }
 
 // Main draw run
+#[tracing::instrument]
 fn run_draw(ctx: &mut ggez::Context, state: &game_state::GlobalState) -> GameResult {
     // Let render target call draw on state
     state
@@ -184,9 +195,14 @@ fn run_draw(ctx: &mut ggez::Context, state: &game_state::GlobalState) -> GameRes
         .render_target
         .draw(state, ctx)?;
 
-    ggez::graphics::present(ctx)
+    tracing::info_span!("GGEZ Present").in_scope(|| {
+        ggez::graphics::present(ctx).unwrap();
+    });
+
+    Ok(())
 }
 
+#[tracing::instrument]
 pub fn process_event(
     ctx: &mut ggez::Context,
     state: &mut game_state::GlobalState,

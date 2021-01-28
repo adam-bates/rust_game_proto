@@ -4,6 +4,7 @@ use super::{
 };
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct AnimateBackgroundSystem {
     pub timer: Timer,
     pub frame_map: HashMap<usize, usize>,
@@ -17,6 +18,12 @@ impl<'a> specs::System<'a> for AnimateBackgroundSystem {
         specs::Read<'a, DeltaTime>,
     );
 
+    #[tracing::instrument(skip(
+        tile_map_r,
+        should_update_background_tiles_r,
+        camera_r,
+        delta_time_r
+    ), name = "AnimateBackgroundSystem")]
     fn run(
         &mut self,
         (tile_map_r, mut should_update_background_tiles_r, camera_r, delta_time_r): Self::SystemData,

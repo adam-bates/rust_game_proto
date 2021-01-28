@@ -89,6 +89,12 @@ impl PalletTownOverworldScene {
     }
 }
 
+impl std::fmt::Debug for PalletTownOverworldScene {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!("{} {{ ... }}", self.name()))
+    }
+}
+
 impl Scene for PalletTownOverworldScene {
     fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<CameraBounds>();
@@ -97,6 +103,7 @@ impl Scene for PalletTownOverworldScene {
         Ok(())
     }
 
+    #[tracing::instrument]
     fn update(
         &mut self,
         _game_state: &mut GameState,
@@ -106,6 +113,7 @@ impl Scene for PalletTownOverworldScene {
         Ok(None)
     }
 
+    #[tracing::instrument]
     fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
         use ggez::graphics::Drawable;
         let tile_map = game_state.world.read_resource::<TileMap>();
@@ -132,5 +140,9 @@ impl Scene for PalletTownOverworldScene {
 
     fn should_update_previous(&self) -> bool {
         true
+    }
+
+    fn name(&self) -> &str {
+        "PalletTownOverworldScene"
     }
 }
