@@ -1,8 +1,6 @@
 use super::{config, Filesystem, Result};
 use directories::ProjectDirs;
 
-const ASSETS_PATH: &str = "assets"; // TODO: config?
-
 fn get_project_dirs() -> Result<ProjectDirs> {
     match ProjectDirs::from("", config::APPLICATION_AUTHOR, config::APPLICATION_ID) {
         Some(dirs) => Ok(dirs),
@@ -41,7 +39,7 @@ pub fn new_filesystem() -> Result<Filesystem> {
         } else {
             root_path.clone()
         };
-        path.push(ASSETS_PATH);
+        path.push(config::ASSETS_PATH);
 
         push_physical_fs(&mut overlay_fs, path, true)
     };

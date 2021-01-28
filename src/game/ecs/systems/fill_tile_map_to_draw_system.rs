@@ -2,7 +2,6 @@ use super::{
     components::Drawable,
     resources::{Camera, TileMap},
 };
-use std::sync::Arc;
 
 pub struct FillTileMapToDrawSystem;
 
@@ -22,10 +21,7 @@ impl<'a> specs::System<'a> for FillTileMapToDrawSystem {
                 for x in camera_r.left..camera_r.right {
                     if let Some(entity) = tile_map_r.get_tile(x, y).entity {
                         if let Some(drawable) = drawable_c.get(entity) {
-                            tile_map_r.to_draw.push(Drawable {
-                                drawable: Arc::clone(&drawable.drawable),
-                                draw_params: drawable.draw_params.clone(),
-                            });
+                            tile_map_r.to_draw.push(drawable.clone());
                         }
                     }
                 }

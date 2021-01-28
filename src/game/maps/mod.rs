@@ -1,15 +1,19 @@
 use super::{
     config,
     ecs::{
-        components::{CurrentPosition, Drawable, Player, TargetPosition},
+        components::{
+            CurrentPosition, Drawable, FacingDirection, Player, SpriteRow, SpriteSheet,
+            TargetPosition,
+        },
         resources::Tile,
     },
     error::types::GameResult,
     game_state::GameState,
+    input::types::GameDirection,
 };
 use serde::{Deserialize, Serialize};
 use specs::{Builder, Entity, Join, WorldExt};
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TileMapDefinition {
@@ -83,8 +87,17 @@ impl TileMapDefinition {
                 )?),
                 draw_params: ggez::graphics::DrawParam::default(),
             })
-            .with(CurrentPosition { x: 1., y: 1. })
+            .with(CurrentPosition { x: 5., y: 5. })
+            .with(SpriteSheet::new(vec![SpriteRow::new(1)]))
+            .with(FacingDirection {
+                direction: GameDirection::Down,
+            })
             .build();
+
+        let mut id_tile_types = HashMap::new();
+        for map_tile in self.tiles.iter() {
+            id_tile_types.insert(map_tile.id, &map_tile.tile_type);
+        }
 
         let mut x_y_tiles = vec![];
 
@@ -92,19 +105,22 @@ impl TileMapDefinition {
             let mut x_tiles = vec![];
 
             for x in 0..self.width {
-                if x == player_position.0 && y == player_position.1 {
-                    x_tiles.push(Tile {
-                        entity: Some(player_entity),
-                        ..Default::default()
-                    });
-                } else if x == 1 && y == 1 {
-                    x_tiles.push(Tile {
-                        entity: Some(npc_entity),
-                        ..Default::default()
-                    });
+                let entity = if x == player_position.0 && y == player_position.1 {
+                    Some(player_entity)
+                } else if x == 5 && y == 5 {
+                    Some(npc_entity)
                 } else {
-                    x_tiles.push(Tile::default());
-                }
+                    None
+                };
+
+                x_tiles.push(Tile {
+                    entity,
+                    tile_type: id_tile_types
+                        .get(&self.background_tile_ids[y * self.width + x])
+                        .map(|v| *v)
+                        .cloned(),
+                    overlay: None,
+                })
             }
 
             x_y_tiles.push(x_tiles);
@@ -114,20 +130,10 @@ impl TileMapDefinition {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum TileType {
     Wall,
     Water,
-}
-
-impl From<&str> for TileType {
-    fn from(string: &str) -> Self {
-        match string {
-            "Wall" => Self::Wall,
-            "Water" => Self::Water,
-            _ => panic!(format!("Unknown tile type: {}", string)),
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]

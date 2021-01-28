@@ -13,7 +13,12 @@ pub const LOGS_DIR_NAME: &str = ".logs";
 #[cfg(not(debug_assertions))]
 pub const LOG_FILE_EXT: &str = "log";
 
+pub const ASSETS_PATH: &str = "assets";
+
 pub const SETTINGS_FILE_PATH: &str = "/settings.conf";
+
+pub const WALK_SECONDS_PER_TILE: f32 = 0.25;
+pub const WAIT_AFTER_TURN_BEFORE_MOVE: f32 = 0.175;
 
 // 16x16 tile sizes
 pub const TILE_PIXELS_SIZE_USIZE: usize = 16;

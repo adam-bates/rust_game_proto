@@ -6,4 +6,5 @@ use specs_derive::Component;
 pub struct TargetPosition {
     pub x: usize,
     pub y: usize,
+    pub is_moving: bool,
 }

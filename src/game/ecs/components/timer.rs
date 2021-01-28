@@ -10,6 +10,7 @@ pub struct Timer {
     pub repeating: bool,
     pub elapsed: f32,
     pub finished: bool,
+    pub should_tick: bool,
 }
 
 impl Timer {
@@ -67,6 +68,15 @@ impl Timer {
     #[inline]
     pub fn set_repeating(&mut self, repeating: bool) {
         self.repeating = repeating
+    }
+
+    #[inline]
+    pub fn should_tick(&self) -> bool {
+        self.should_tick
+    }
+
+    pub fn set_should_tick(&mut self, should_tick: bool) {
+        self.should_tick = should_tick;
     }
 
     /// Advances the timer by `delta` seconds.

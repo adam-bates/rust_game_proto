@@ -1,13 +1,13 @@
 use super::{
     config,
-    ecs::resources::{CameraBounds, Frame, Tile, TileMap},
+    ecs::resources::{CameraBounds, Frame, TileMap},
     error::types::GameResult,
     game_state::GameState,
     input::types::GameInput,
     maps::TileMapDefinition,
     types::{Scene, SceneSwitch},
 };
-use specs::{Entity, WorldExt};
+use specs::WorldExt;
 
 pub struct PalletTownOverworldScene;
 

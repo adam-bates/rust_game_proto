@@ -6,6 +6,7 @@ mod move_current_position_system;
 mod move_player_target_position_system;
 mod update_background_tiles_system;
 mod update_draw_param_system;
+mod update_facing_sprite_system;
 
 pub use animate_background_system::AnimateBackgroundSystem;
 pub use fill_tile_map_to_draw_system::FillTileMapToDrawSystem;
@@ -17,6 +18,6 @@ pub use update_background_tiles_system::UpdateBackgroundTilesSystem;
 pub use update_draw_param_system::UpdateDrawParamSystem;
 
 use super::{
-    super::{config, input},
+    super::{config, input, maps},
     components, resources,
 };

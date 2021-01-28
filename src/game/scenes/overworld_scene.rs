@@ -1,7 +1,10 @@
 use super::{
     config,
     ecs::{
-        components::{CurrentPosition, Drawable, Player, TargetPosition, Timer},
+        components::{
+            CurrentPosition, Drawable, FacingDirection, Player, SpriteRow, SpriteSheet,
+            TargetPosition, Timer,
+        },
         resources::{Camera, PlayerMovementRequest, ShouldUpdateBackgroundTiles},
         systems::{
             AnimateBackgroundSystem, FillTileMapToDrawSystem, FollowPlayerSystem,
@@ -14,7 +17,7 @@ use super::{
     input::types::{GameButton, GameDirection, GameInput},
     types::{Scene, SceneSwitch},
 };
-use specs::{Builder, WorldExt};
+use specs::{Builder, Join, WorldExt};
 use std::sync::Arc;
 
 pub struct OverworldScene {
@@ -26,7 +29,7 @@ impl OverworldScene {
     pub fn new(game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
         // TODO: Build from loaded save file
 
-        let player_target_position = TargetPosition { x: 0, y: 0 };
+        let player_target_position = TargetPosition::default();
         let player_current_position = CurrentPosition {
             x: player_target_position.x as f32,
             y: player_target_position.y as f32,
@@ -37,6 +40,8 @@ impl OverworldScene {
         game_state.world.register::<TargetPosition>();
         game_state.world.register::<Timer>();
         game_state.world.register::<Drawable>();
+        game_state.world.register::<FacingDirection>();
+        game_state.world.register::<SpriteSheet>();
         game_state.world.insert(PlayerMovementRequest::default());
         game_state.world.insert(Camera {
             x: player_target_position.x as f32,
@@ -102,10 +107,11 @@ impl OverworldScene {
             .with(player_current_position)
             .with(player_target_position)
             .with(Timer {
-                duration: 0.2,
+                duration: config::WALK_SECONDS_PER_TILE,
                 repeating: true,
                 elapsed: 0.0,
                 finished: true, // Start finished to allow movement
+                should_tick: false,
             })
             .with(Drawable {
                 drawable: Arc::new(ggez::graphics::Mesh::new_rectangle(
@@ -120,6 +126,10 @@ impl OverworldScene {
                     ggez::graphics::Color::from_rgb(200, 50, 50),
                 )?),
                 draw_params: ggez::graphics::DrawParam::default(),
+            })
+            .with(SpriteSheet::new(vec![SpriteRow::new(1)]))
+            .with(FacingDirection {
+                direction: GameDirection::Down,
             })
             .build();
 
@@ -167,6 +177,8 @@ impl Scene for OverworldScene {
         _ctx: &mut ggez::Context,
         input: GameInput,
     ) -> GameResult<Option<SceneSwitch>> {
+        let mut direction_to_turn = None;
+
         if let Some(player_movement_request) = game_state.world.get_mut::<PlayerMovementRequest>() {
             match input {
                 GameInput::Button { button, pressed } => match button {
@@ -178,6 +190,8 @@ impl Scene for OverworldScene {
                         };
                         player_movement_request.last_requested_y_direction =
                             player_movement_request.last_requested_direction.clone();
+
+                        direction_to_turn = player_movement_request.last_requested_direction;
                     }
                     GameButton::Down => {
                         player_movement_request.last_requested_direction = if pressed {
@@ -187,6 +201,8 @@ impl Scene for OverworldScene {
                         };
                         player_movement_request.last_requested_y_direction =
                             player_movement_request.last_requested_direction.clone();
+
+                        direction_to_turn = player_movement_request.last_requested_direction;
                     }
                     GameButton::Left => {
                         player_movement_request.last_requested_direction = if pressed {
@@ -196,6 +212,8 @@ impl Scene for OverworldScene {
                         };
                         player_movement_request.last_requested_x_direction =
                             player_movement_request.last_requested_direction.clone();
+
+                        direction_to_turn = player_movement_request.last_requested_direction;
                     }
                     GameButton::Right => {
                         player_movement_request.last_requested_direction = if pressed {
@@ -205,11 +223,49 @@ impl Scene for OverworldScene {
                         };
                         player_movement_request.last_requested_x_direction =
                             player_movement_request.last_requested_direction.clone();
+
+                        direction_to_turn = player_movement_request.last_requested_direction;
                     }
                     _ => {}
                 },
                 GameInput::Direction { direction } => {
                     player_movement_request.last_requested_direction = direction;
+
+                    direction_to_turn = player_movement_request.last_requested_direction;
+                }
+            }
+        }
+
+        if let Some(direction) = direction_to_turn {
+            let (player_c, target_position_c, mut timer_c, mut facing_direction_c): (
+                specs::ReadStorage<Player>,
+                specs::ReadStorage<TargetPosition>,
+                specs::WriteStorage<Timer>,
+                specs::WriteStorage<FacingDirection>,
+            ) = game_state.world.system_data();
+
+            for (_, target_position, timer, facing_direction) in (
+                &player_c,
+                &target_position_c,
+                &mut timer_c,
+                &mut facing_direction_c,
+            )
+                .join()
+            {
+                // Help linter
+                #[cfg(debug_assertions)]
+                let target_position = target_position as &TargetPosition;
+                #[cfg(debug_assertions)]
+                let timer = timer as &mut Timer;
+                #[cfg(debug_assertions)]
+                let facing_direction = facing_direction as &mut FacingDirection;
+
+                if !target_position.is_moving && facing_direction.direction != direction {
+                    facing_direction.direction = direction;
+
+                    timer.reset();
+                    timer.elapsed = timer.duration - config::WAIT_AFTER_TURN_BEFORE_MOVE;
+                    timer.set_should_tick(true);
                 }
             }
         }
