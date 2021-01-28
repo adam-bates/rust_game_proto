@@ -1,5 +1,6 @@
 use super::{
-    components::{CurrentPosition, FacingDirection, Player, TargetPosition, Timer},
+    components::{CurrentPosition, FacingDirection, Player, SpriteSheet, TargetPosition, Timer},
+    config,
     input::types::GameDirection,
     maps::TileType,
     resources::{PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
@@ -16,6 +17,7 @@ type SystemData<'a> = (
     specs::ReadStorage<'a, CurrentPosition>,
     specs::WriteStorage<'a, TargetPosition>,
     specs::WriteStorage<'a, Timer>,
+    specs::WriteStorage<'a, SpriteSheet>,
     specs::WriteStorage<'a, FacingDirection>,
 );
 
@@ -25,6 +27,7 @@ fn move_target_position<'a>(
     current_position: &CurrentPosition,
     target_position: &mut TargetPosition,
     timer: &mut Timer,
+    sprite_sheet: &mut SpriteSheet,
     direction: &GameDirection,
 ) {
     let (direction_x, direction_y) = direction.to_xy();
@@ -79,6 +82,14 @@ fn move_target_position<'a>(
         target_position.x = target_position_x;
         target_position.y = target_position_y;
         target_position.is_moving = true;
+
+        sprite_sheet.idx = match direction {
+            GameDirection::Down => config::ENTITY_SPRITE_SHEET_IDX_WALK_DOWN,
+            GameDirection::Right => config::ENTITY_SPRITE_SHEET_IDX_WALK_RIGHT,
+            GameDirection::Up => config::ENTITY_SPRITE_SHEET_IDX_WALK_UP,
+            GameDirection::Left => config::ENTITY_SPRITE_SHEET_IDX_WALK_LEFT,
+        };
+        sprite_sheet.refresh();
     }
 }
 
@@ -91,16 +102,18 @@ fn handle_input<'a>(
         current_position_c,
         mut target_position_c,
         mut timer_c,
+        mut sprite_sheet_c,
         mut facing_direction_c,
     ): SystemData<'a>,
     direction: &GameDirection,
 ) {
     if let Some(tile_map) = &mut tile_map_r {
-        for (_, current_position, target_position, timer, facing_direction) in (
+        for (_, current_position, target_position, timer, sprite_sheet, facing_direction) in (
             &player_c,
             &current_position_c,
             &mut target_position_c,
             &mut timer_c,
+            &mut sprite_sheet_c,
             &mut facing_direction_c,
         )
             .join()
@@ -125,6 +138,7 @@ fn handle_input<'a>(
                         current_position,
                         target_position,
                         timer,
+                        sprite_sheet,
                         direction,
                     );
                 }
@@ -146,7 +160,8 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
             current_position_c,
             target_position_c,
             timer_c,
-            facing_direction_c,
+            mut sprite_sheet_c,
+            mut facing_direction_c,
         ): Self::SystemData,
     ) {
         // Last requested direction
@@ -160,6 +175,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                     current_position_c,
                     target_position_c,
                     timer_c,
+                    sprite_sheet_c,
                     facing_direction_c,
                 ),
                 &direction,
@@ -176,6 +192,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                     current_position_c,
                     target_position_c,
                     timer_c,
+                    sprite_sheet_c,
                     facing_direction_c,
                 ),
                 &direction,
@@ -192,10 +209,29 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                     current_position_c,
                     target_position_c,
                     timer_c,
+                    sprite_sheet_c,
                     facing_direction_c,
                 ),
                 &direction,
             );
+        } else {
+            for (_, sprite_sheet, facing_direction) in
+                (&player_c, &mut sprite_sheet_c, &mut facing_direction_c).join()
+            {
+                // Help linter
+                #[cfg(debug_assertions)]
+                let sprite_sheet = sprite_sheet as &mut SpriteSheet;
+                #[cfg(debug_assertions)]
+                let facing_direction = facing_direction as &mut FacingDirection;
+
+                sprite_sheet.idx = match facing_direction.direction {
+                    GameDirection::Down => config::ENTITY_SPRITE_SHEET_IDX_IDLE_DOWN,
+                    GameDirection::Left => config::ENTITY_SPRITE_SHEET_IDX_IDLE_LEFT,
+                    GameDirection::Up => config::ENTITY_SPRITE_SHEET_IDX_IDLE_UP,
+                    GameDirection::Right => config::ENTITY_SPRITE_SHEET_IDX_IDLE_RIGHT,
+                };
+                sprite_sheet.refresh();
+            }
         }
     }
 }

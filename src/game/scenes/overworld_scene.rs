@@ -10,6 +10,7 @@ use super::{
             AnimateBackgroundSystem, FillTileMapToDrawSystem, FollowPlayerSystem,
             MoveBackgroundDrawParamSystem, MoveCurrentPositionSystem,
             MovePlayerTargetPositionSystem, UpdateBackgroundTilesSystem, UpdateDrawParamSystem,
+            UpdateSpriteSheetDrawParamSystem,
         },
     },
     error::types::GameResult,
@@ -77,9 +78,17 @@ impl OverworldScene {
                 &["follow_player_system"],
             )
             .with(
+                UpdateSpriteSheetDrawParamSystem,
+                "update_sprite_sheet_draw_param_system",
+                &["move_player_target_position_system"],
+            )
+            .with(
                 FillTileMapToDrawSystem,
                 "fill_tile_map_to_draw_system",
-                &["follow_player_system"],
+                &[
+                    "follow_player_system",
+                    "update_sprite_sheet_draw_param_system",
+                ],
             )
             .with(
                 AnimateBackgroundSystem {
@@ -127,7 +136,16 @@ impl OverworldScene {
                 )?),
                 draw_params: ggez::graphics::DrawParam::default(),
             })
-            .with(SpriteSheet::new(vec![SpriteRow::new(1)]))
+            .with(SpriteSheet::new(vec![
+                SpriteRow::new(1), // IDLE DOWN
+                SpriteRow::new(1), // IDLE RIGHT
+                SpriteRow::new(1), // IDLE UP
+                SpriteRow::new(1), // IDLE LEFT
+                SpriteRow::new(1), // WALK DOWN
+                SpriteRow::new(1), // WALK RIGHT
+                SpriteRow::new(1), // WALK UP
+                SpriteRow::new(1), // WALK LEFT
+            ]))
             .with(FacingDirection {
                 direction: GameDirection::Down,
             })

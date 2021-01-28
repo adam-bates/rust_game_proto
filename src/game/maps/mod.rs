@@ -88,7 +88,16 @@ impl TileMapDefinition {
                 draw_params: ggez::graphics::DrawParam::default(),
             })
             .with(CurrentPosition { x: 5., y: 5. })
-            .with(SpriteSheet::new(vec![SpriteRow::new(1)]))
+            .with(SpriteSheet::new(vec![
+                SpriteRow::new(1), // IDLE DOWN
+                SpriteRow::new(1), // IDLE RIGHT
+                SpriteRow::new(1), // IDLE UP
+                SpriteRow::new(1), // IDLE LEFT
+                SpriteRow::new(1), // WALK DOWN
+                SpriteRow::new(1), // WALK RIGHT
+                SpriteRow::new(1), // WALK UP
+                SpriteRow::new(1), // WALK LEFT
+            ]))
             .with(FacingDirection {
                 direction: GameDirection::Down,
             })
