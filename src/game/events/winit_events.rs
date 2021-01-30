@@ -158,29 +158,19 @@ fn run_update(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> G
         .video_settings
         .inverse_target_fps_duration;
 
-    tracing::info_span!("WHILE TIME_STEP").in_scope(|| {
         // Manually checking time-steps to optimize
         while ctx.timer_context.residual_update_dt > inverse_target_fps_duration {
-            tracing::info_span!("INSIDE TIME_STEP").in_scope(|| {
-                state.update(ctx).unwrap(); // TODO: "?"
+                state.update(ctx)?;
 
                 update_changed = true;
                 ctx.timer_context.residual_update_dt -= inverse_target_fps_duration;
-            });
         }
-    });
 
-    tracing::info_span!("Unchanged CPU yield").in_scope(|| {
         if !update_changed {
             // Give CPU room to breathe
-            tracing::info_span!("yield_now").in_scope(|| {
                 std::thread::yield_now();
-            });
-            tracing::info_span!("spin_loop_hint").in_scope(|| {
                 core::sync::atomic::spin_loop_hint();
-            });
         }
-    });
 
     Ok(update_changed)
 }

@@ -21,10 +21,8 @@ pub struct TileMapDefinition {
     pub height: usize,
     pub player_x: usize,
     pub player_y: usize,
-    pub sprite_sheet_filename: String,
-    pub background_tile_ids: Vec<usize>,
-    pub overlay_tile_ids: Vec<Option<usize>>,
-    pub tiles: Vec<MapTile>,
+    pub background: TileLayer,
+    pub overlay: TileLayer,
 }
 
 fn find_and_move_player(game_state: &mut GameState, position: (usize, usize)) -> Entity {
@@ -59,6 +57,23 @@ fn find_and_move_player(game_state: &mut GameState, position: (usize, usize)) ->
 }
 
 impl TileMapDefinition {
+    pub fn load_from_file(ctx: &mut ggez::Context, filename: &str) -> GameResult<Self> {
+        let file = ctx
+            .filesystem
+            .find_vfs(&ctx.filesystem.assets_path)
+            .ok_or_else(|| {
+                ggez::GameError::FilesystemError("Couldn't find asset filesystem:".to_string())
+            })?
+            .open(&std::path::PathBuf::from(filename))?;
+
+        bincode::deserialize_from(file).or_else(|e| {
+            Err(ggez::GameError::ResourceLoadError(format!(
+                "Couldn't load map binary: {}",
+                e
+            )))
+        })
+    }
+
     pub fn build_tiles(
         &self,
         game_state: &mut GameState,
@@ -103,10 +118,17 @@ impl TileMapDefinition {
             })
             .build();
 
-        let mut id_tile_types = HashMap::new();
-        for map_tile in self.tiles.iter() {
-            id_tile_types.insert(map_tile.id, &map_tile.tile_type);
-        }
+        let id_tile_types =
+            self.background
+                .tile_sets
+                .iter()
+                .fold(HashMap::new(), |mut map, tile_set| {
+                    tile_set.tiles.iter().for_each(|map_tile| {
+                        map.insert(map_tile.id, map_tile.tile_type.clone());
+                    });
+
+                    map
+                });
 
         let mut x_y_tiles = vec![];
 
@@ -124,11 +146,8 @@ impl TileMapDefinition {
 
                 x_tiles.push(Tile {
                     entity,
-                    tile_type: id_tile_types
-                        .get(&self.background_tile_ids[y * self.width + x])
-                        .map(|v| *v)
-                        .cloned(),
-                    overlay: None,
+                    tile_type: self.background.tile_ids[y * self.width + x]
+                        .and_then(|tile_id| id_tile_types.get(&tile_id).cloned()),
                 })
             }
 
@@ -137,6 +156,18 @@ impl TileMapDefinition {
 
         Ok(x_y_tiles)
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct TileLayer {
+    pub tile_ids: Vec<Option<usize>>,
+    pub tile_sets: Vec<TileSet>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct TileSet {
+    pub sprite_sheet_filename: String,
+    pub tiles: Vec<MapTile>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

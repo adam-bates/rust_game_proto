@@ -93,7 +93,6 @@ impl OverworldScene {
             .with(
                 AnimateBackgroundSystem {
                     timer: Timer::new(std::time::Duration::from_secs_f32(0.5), true),
-                    frame_map: std::collections::HashMap::default(),
                 },
                 "animate_background_system",
                 &[],
