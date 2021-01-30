@@ -49,6 +49,8 @@ fn find_and_move_player(game_state: &mut GameState, position: (usize, usize)) ->
 
         current_position.x = position.0 as f32;
         current_position.y = position.1 as f32;
+        target_position.from_x = position.0;
+        target_position.from_y = position.1;
         target_position.x = position.0;
         target_position.y = position.1;
     }

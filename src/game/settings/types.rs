@@ -37,10 +37,6 @@ pub struct VideoSettings {
 
     #[serde(skip)]
     pub inverse_target_fps_duration: std::time::Duration,
-
-    pub vsync: bool,
-
-    pub srgb: bool,
     // colour_blind_mode,
 }
 
@@ -86,8 +82,6 @@ impl Default for VideoSettings {
             inverse_target_fps_duration: std::time::Duration::from_secs_f32(
                 DEFAULT_INVERSE_FPS_F32,
             ),
-            vsync: true,
-            srgb: true,
         }
     }
 }
@@ -292,8 +286,8 @@ impl Into<ggez::conf::WindowMode> for Settings {
 impl Into<ggez::conf::WindowSetup> for &Settings {
     fn into(self) -> ggez::conf::WindowSetup {
         ggez::conf::WindowSetup {
-            vsync: self.video_settings.vsync,
-            srgb: self.video_settings.srgb,
+            vsync: true,
+            srgb: true,
             title: config::APPLICATION_NAME.to_string(),
             icon: "/spritesheets/pallet_town_spritesheet.png".to_string(), // TODO
             samples: ggez::conf::NumSamples::Zero,

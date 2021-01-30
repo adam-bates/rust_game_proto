@@ -15,7 +15,10 @@ impl<'a> specs::System<'a> for MoveCurrentPositionSystem {
         specs::Read<'a, DeltaTime>,
     );
 
-    #[tracing::instrument(skip(current_position_c, target_position_c, timer_c, delta_r), name = "MoveCurrentPositionSystem")]
+    #[tracing::instrument(
+        skip(current_position_c, target_position_c, timer_c, delta_r),
+        name = "MoveCurrentPositionSystem"
+    )]
     fn run(
         &mut self,
         (mut current_position_c, mut target_position_c, mut timer_c, delta_r): Self::SystemData,
@@ -36,17 +39,18 @@ impl<'a> specs::System<'a> for MoveCurrentPositionSystem {
             let timer = timer as &mut Timer;
 
             if timer.should_tick() {
-                let delta_secs = delta_r.secs;
-
-                timer.tick(delta_secs);
-
-                let distance_percent =
-                    nalgebra::clamp(delta_secs / (timer.duration() - timer.elapsed()), 0., 1.);
-
-                current_position.lerp(target_position, distance_percent);
+                timer.tick(delta_r.secs);
 
                 if timer.finished() {
+                    current_position.x = target_position.x as f32;
+                    current_position.y = target_position.y as f32;
+
+                    target_position.from_x = target_position.x;
+                    target_position.from_y = target_position.y;
+
                     timer.set_should_tick(false);
+                } else {
+                    *current_position = target_position.get_current_position(timer);
                 }
             } else if target_position.is_moving {
                 target_position.is_moving = false;

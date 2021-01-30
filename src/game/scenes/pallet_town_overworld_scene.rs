@@ -7,7 +7,6 @@ use super::{
     maps::TileMapDefinition,
     types::{Scene, SceneSwitch},
 };
-use specs::WorldExt;
 
 const TILE_MAP_DEFINITION_FILE: &str = "/bin/area/pallet_town_tile_map.bin";
 
@@ -302,17 +301,6 @@ impl Scene for PalletTownOverworldScene {
 
     #[tracing::instrument]
     fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
-        use ggez::graphics::Drawable;
-        let tile_map = game_state.world.read_resource::<TileMap>();
-
-        tile_map.background.draw(ctx, tile_map.background_param)?;
-
-        for drawable in &tile_map.to_draw {
-            drawable.drawable.draw(ctx, drawable.draw_params)?;
-        }
-
-        tile_map.overlay.draw(ctx, tile_map.background_param)?;
-
         Ok(())
     }
 
@@ -326,6 +314,10 @@ impl Scene for PalletTownOverworldScene {
     }
 
     fn should_update_previous(&self) -> bool {
+        true
+    }
+
+    fn should_draw_previous(&self) -> bool {
         true
     }
 

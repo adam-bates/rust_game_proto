@@ -35,14 +35,17 @@ fn move_target_position<'a>(
 
     let tile_map_dimensions = tile_map.dimensions();
 
+    let rounded_current_position_x = current_position.x.round() as usize;
+    let rounded_current_position_y = current_position.y.round() as usize;
+
     let target_position_x = nalgebra::clamp(
-        current_position.x as isize + direction_x,
+        rounded_current_position_x as isize + direction_x,
         0,
         tile_map_dimensions.0 as isize - 1,
     ) as usize;
 
     let target_position_y = nalgebra::clamp(
-        current_position.y as isize + direction_y,
+        rounded_current_position_y as isize + direction_y,
         0,
         tile_map_dimensions.1 as isize - 1,
     ) as usize;
@@ -61,14 +64,20 @@ fn move_target_position<'a>(
         }
     }
 
-    if target_position_x != current_position.x as usize
-        || target_position_y != current_position.y as usize
+    if target_position_x != rounded_current_position_x
+        || target_position_y != rounded_current_position_y
     {
         let player_entity = tile_map
-            .get_tile_mut(current_position.x as usize, current_position.y as usize)
+            .get_tile_mut(rounded_current_position_x, rounded_current_position_y)
             .entity
             .take()
-            .expect("Player entity isn't in tile_map @ current_position");
+            .expect(&format!(
+                "Player entity isn't in tile_map @ [{}, {}]\n{:#?}\n{:#?}",
+                rounded_current_position_x,
+                rounded_current_position_y,
+                current_position,
+                target_position
+            ));
 
         tile_map
             .get_tile_mut(target_position_x, target_position_y)
@@ -130,6 +139,10 @@ fn handle_input<'a>(
             let facing_direction = facing_direction as &mut FacingDirection;
 
             if timer.finished() {
+                // println!("Moving: {:#?}", direction);
+                // println!("Facing: {:#?}", facing_direction);
+                // println!("CurrentPosition: {:#?}", current_position);
+                // println!("TargetPosition: {:#?}", target_position);
                 if target_position.is_moving || facing_direction.direction == *direction {
                     facing_direction.direction = *direction;
 
@@ -151,17 +164,20 @@ fn handle_input<'a>(
 impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
     type SystemData = SystemData<'a>;
 
-    #[tracing::instrument(skip(
-        tile_map_r,
-        player_movement_request_r,
-        should_update_background_tiles_r,
-        player_c,
-        current_position_c,
-        target_position_c,
-        timer_c,
-        sprite_sheet_c,
-        facing_direction_c,
-    ), name = "MovePlayerTargetPositionSystem")]
+    #[tracing::instrument(
+        skip(
+            tile_map_r,
+            player_movement_request_r,
+            should_update_background_tiles_r,
+            player_c,
+            current_position_c,
+            target_position_c,
+            timer_c,
+            sprite_sheet_c,
+            facing_direction_c,
+        ),
+        name = "MovePlayerTargetPositionSystem"
+    )]
     fn run(
         &mut self,
         (

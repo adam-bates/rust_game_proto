@@ -150,7 +150,6 @@ fn process_device_event(
 #[tracing::instrument]
 fn run_update(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> GameResult<bool> {
     let mut update_changed = false;
-    state.delta_secs = state.game_state.settings.video_settings.inverse_target_fps;
 
     let inverse_target_fps_duration = state
         .game_state
@@ -158,19 +157,20 @@ fn run_update(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> G
         .video_settings
         .inverse_target_fps_duration;
 
-        // Manually checking time-steps to optimize
-        while ctx.timer_context.residual_update_dt > inverse_target_fps_duration {
-                state.update(ctx)?;
+    if ctx.timer_context.residual_update_dt > inverse_target_fps_duration {
+        state.delta_secs = ctx.timer_context.residual_update_dt.as_secs_f32();
+        state.update(ctx)?;
 
-                update_changed = true;
-                ctx.timer_context.residual_update_dt -= inverse_target_fps_duration;
-        }
+        update_changed = true;
+        const ZERO_DURATION: std::time::Duration = std::time::Duration::from_secs(0);
+        ctx.timer_context.residual_update_dt = ZERO_DURATION;
+    }
 
-        if !update_changed {
-            // Give CPU room to breathe
-                std::thread::yield_now();
-                core::sync::atomic::spin_loop_hint();
-        }
+    if !update_changed {
+        // Give CPU room to breathe
+        std::thread::yield_now();
+        core::sync::atomic::spin_loop_hint();
+    }
 
     Ok(update_changed)
 }

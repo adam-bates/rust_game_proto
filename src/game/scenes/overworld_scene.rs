@@ -5,7 +5,7 @@ use super::{
             CurrentPosition, Drawable, FacingDirection, Player, SpriteRow, SpriteSheet,
             TargetPosition, Timer,
         },
-        resources::{Camera, PlayerMovementRequest, ShouldUpdateBackgroundTiles},
+        resources::{Camera, PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
         systems::{
             AnimateBackgroundSystem, FillTileMapToDrawSystem, FollowPlayerSystem,
             MoveBackgroundDrawParamSystem, MoveCurrentPositionSystem,
@@ -18,6 +18,7 @@ use super::{
     input::types::{GameButton, GameDirection, GameInput},
     types::{Scene, SceneSwitch},
 };
+use ggez::graphics::Drawable as GgezDrawable;
 use specs::{Builder, Join, WorldExt};
 use std::sync::Arc;
 
@@ -192,7 +193,17 @@ impl Scene for OverworldScene {
     }
 
     #[tracing::instrument]
-    fn draw(&self, _game_state: &GameState, _ctx: &mut ggez::Context) -> GameResult {
+    fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
+        if let Some(tile_map) = game_state.world.try_fetch::<TileMap>() {
+            tile_map.background.draw(ctx, tile_map.background_param)?;
+
+            for drawable in &tile_map.to_draw {
+                drawable.drawable.draw(ctx, drawable.draw_params)?;
+            }
+
+            tile_map.overlay.draw(ctx, tile_map.background_param)?;
+        }
+
         Ok(())
     }
 
