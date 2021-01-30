@@ -9,7 +9,7 @@ use super::{
 };
 use specs::WorldExt;
 
-const TILE_MAP_DEFINITION_FILE: &str = "/maps/pallet_town_tile_map.bin";
+const TILE_MAP_DEFINITION_FILE: &str = "/bin/area/pallet_town_tile_map.bin";
 
 pub struct PalletTownOverworldScene;
 

@@ -374,7 +374,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         };
 
         let tile_map_bin_path =
-            root_path.join(PathBuf::from(format!("assets/maps/{}.bin", filename)));
+            root_path.join(PathBuf::from(format!("assets/bin/area/{}.bin", filename)));
 
         bincode::serialize_into(fs::File::create(tile_map_bin_path)?, &tile_map)?;
     }
