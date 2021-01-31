@@ -46,6 +46,10 @@ impl SpriteSheet {
         }
     }
 
+    pub fn row(&self) -> &SpriteRow {
+        &self.sprite_rows[self.idx]
+    }
+
     pub fn next_frame(&mut self) {
         self.sprite_rows[self.idx].next_frame();
         self.refresh();
@@ -78,10 +82,10 @@ impl SpriteSheet {
     fn image_src(sprite_rows: &Vec<SpriteRow>, idx: usize) -> ggez::graphics::Rect {
         let sprite_row = &sprite_rows[idx];
 
-        let idx = idx as f32;
-
         let width = sprite_row.frames as f32;
         let height = sprite_rows.len() as f32;
+
+        let idx = width * idx as f32 + sprite_row.idx as f32;
 
         let inverse_width = 1. / width;
         let inverse_height = 1. / height;

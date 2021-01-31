@@ -156,6 +156,14 @@ fn handle_input<'a>(
                         direction,
                     );
                 }
+            } else if !target_position.is_moving {
+                sprite_sheet.idx = match facing_direction.direction {
+                    GameDirection::Down => config::ENTITY_SPRITE_SHEET_IDX_IDLE_DOWN,
+                    GameDirection::Left => config::ENTITY_SPRITE_SHEET_IDX_IDLE_LEFT,
+                    GameDirection::Up => config::ENTITY_SPRITE_SHEET_IDX_IDLE_UP,
+                    GameDirection::Right => config::ENTITY_SPRITE_SHEET_IDX_IDLE_RIGHT,
+                };
+                sprite_sheet.refresh();
             }
         }
     }
@@ -243,22 +251,34 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                 &direction,
             );
         } else {
-            for (_, sprite_sheet, facing_direction) in
-                (&player_c, &mut sprite_sheet_c, &mut facing_direction_c).join()
+            for (_, target_position, sprite_sheet, timer, facing_direction) in (
+                &player_c,
+                &target_position_c,
+                &mut sprite_sheet_c,
+                &timer_c,
+                &mut facing_direction_c,
+            )
+                .join()
             {
                 // Help linter
                 #[cfg(debug_assertions)]
+                let target_position = target_position as &TargetPosition;
+                #[cfg(debug_assertions)]
                 let sprite_sheet = sprite_sheet as &mut SpriteSheet;
+                #[cfg(debug_assertions)]
+                let timer = timer as &Timer;
                 #[cfg(debug_assertions)]
                 let facing_direction = facing_direction as &mut FacingDirection;
 
-                sprite_sheet.idx = match facing_direction.direction {
-                    GameDirection::Down => config::ENTITY_SPRITE_SHEET_IDX_IDLE_DOWN,
-                    GameDirection::Left => config::ENTITY_SPRITE_SHEET_IDX_IDLE_LEFT,
-                    GameDirection::Up => config::ENTITY_SPRITE_SHEET_IDX_IDLE_UP,
-                    GameDirection::Right => config::ENTITY_SPRITE_SHEET_IDX_IDLE_RIGHT,
-                };
-                sprite_sheet.refresh();
+                if !target_position.is_moving || timer.finished() {
+                    sprite_sheet.idx = match facing_direction.direction {
+                        GameDirection::Down => config::ENTITY_SPRITE_SHEET_IDX_IDLE_DOWN,
+                        GameDirection::Left => config::ENTITY_SPRITE_SHEET_IDX_IDLE_LEFT,
+                        GameDirection::Up => config::ENTITY_SPRITE_SHEET_IDX_IDLE_UP,
+                        GameDirection::Right => config::ENTITY_SPRITE_SHEET_IDX_IDLE_RIGHT,
+                    };
+                    sprite_sheet.refresh();
+                }
             }
         }
     }

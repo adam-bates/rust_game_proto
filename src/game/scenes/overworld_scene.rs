@@ -18,9 +18,12 @@ use super::{
     input::types::{GameButton, GameDirection, GameInput},
     types::{Scene, SceneSwitch},
 };
+use config::TILE_PIXELS_SIZE_F32;
 use ggez::graphics::Drawable as GgezDrawable;
 use specs::{Builder, Join, WorldExt};
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
+
+const PLAYER_FILE: &str = "/spritesheets/entities/player.png";
 
 pub struct OverworldScene {
     dispatcher: specs::Dispatcher<'static, 'static>,
@@ -109,6 +112,30 @@ impl OverworldScene {
             )
             .build();
 
+        let player_image = ggez::graphics::Image::new(ctx, PathBuf::from(PLAYER_FILE))?;
+        let player_spritesheet = SpriteSheet::new(vec![
+            SpriteRow::new(2), // IDLE DOWN
+            SpriteRow::new(2), // IDLE RIGHT
+            SpriteRow::new(2), // IDLE UP
+            SpriteRow::new(2), // IDLE LEFT
+            SpriteRow::new(2), // WALK DOWN
+            SpriteRow::new(2), // WALK RIGHT
+            SpriteRow::new(2), // WALK UP
+            SpriteRow::new(2), // WALK LEFT
+        ]);
+
+        let player_width = player_image.width() as f32 / player_spritesheet.row().frames as f32;
+        let player_height =
+            player_image.height() as f32 / player_spritesheet.sprite_rows.len() as f32;
+
+        let player_offset_x = (player_width - config::TILE_PIXELS_SIZE_F32) / (player_width * 2.);
+        let player_offset_y = (player_height - config::TILE_PIXELS_SIZE_F32) / player_height;
+
+        // Bottom of image should be level with floor
+        // And sides of image should be centered
+        let player_draw_param =
+            ggez::graphics::DrawParam::default().offset([player_offset_x, player_offset_y]);
+
         let player_entity = game_state
             .world
             .create_entity()
@@ -123,29 +150,10 @@ impl OverworldScene {
                 should_tick: false,
             })
             .with(Drawable {
-                drawable: Arc::new(ggez::graphics::Mesh::new_rectangle(
-                    ctx,
-                    ggez::graphics::DrawMode::fill(),
-                    ggez::graphics::Rect::new(
-                        0.,
-                        config::TILE_PIXELS_SIZE_F32 - 24.,
-                        config::TILE_PIXELS_SIZE_F32,
-                        24.,
-                    ),
-                    ggez::graphics::Color::from_rgb(200, 50, 50),
-                )?),
-                draw_params: ggez::graphics::DrawParam::default(),
+                drawable: Arc::new(player_image),
+                draw_params: player_draw_param,
             })
-            .with(SpriteSheet::new(vec![
-                SpriteRow::new(1), // IDLE DOWN
-                SpriteRow::new(1), // IDLE RIGHT
-                SpriteRow::new(1), // IDLE UP
-                SpriteRow::new(1), // IDLE LEFT
-                SpriteRow::new(1), // WALK DOWN
-                SpriteRow::new(1), // WALK RIGHT
-                SpriteRow::new(1), // WALK UP
-                SpriteRow::new(1), // WALK LEFT
-            ]))
+            .with(player_spritesheet)
             .with(FacingDirection {
                 direction: GameDirection::Down,
             })
