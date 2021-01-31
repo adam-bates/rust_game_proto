@@ -43,7 +43,7 @@ impl<'a> specs::System<'a> for UpdateBackgroundTilesSystem {
 
                 for y in camera_r.top..camera_r.bottom {
                     for x in camera_r.left..camera_r.right {
-                        if let Some(background_idx) = tile_map.tile_indices[max_x * y + x] {
+                        if let Some(background_idx) = tile_map.background_indices[max_x * y + x] {
                             tile_map.background.add(
                                 ggez::graphics::DrawParam::default()
                                     .src(

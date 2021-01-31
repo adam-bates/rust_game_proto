@@ -1,14 +1,19 @@
 use super::{
     config,
-    ecs::resources::{CameraBounds, Frame, TileMap},
+    ecs::{
+        components::{CurrentPosition, Drawable, FacingDirection, SpriteRow, SpriteSheet},
+        resources::{CameraBounds, TileMap},
+    },
     error::types::GameResult,
     game_state::GameState,
-    input::types::GameInput,
-    maps::TileMapDefinition,
+    input::types::{GameDirection, GameInput},
+    maps::{find_and_move_player, TileMapDefinition},
     types::{Scene, SceneSwitch},
 };
+use specs::{Builder, WorldExt};
+use std::{collections::HashMap, sync::Arc};
 
-const TILE_MAP_DEFINITION_FILE: &str = "/bin/area/pallet_town_tile_map.bin";
+const TILE_MAP_DEFINITION_FILE: &str = "/bin/maps/pallet_town.bin";
 
 pub struct PalletTownOverworldScene;
 
@@ -16,201 +21,52 @@ impl PalletTownOverworldScene {
     pub fn new(game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
         let tile_map_definition = TileMapDefinition::load_from_file(ctx, TILE_MAP_DEFINITION_FILE)?;
 
-        println!("{:#?}", tile_map_definition);
+        let mut entities = HashMap::new();
 
-        let loaded_background_images: Vec<GameResult<ggez::graphics::Image>> = tile_map_definition
-            .background
-            .tile_sets
-            .iter()
-            .map(|tile_set| {
-                ggez::graphics::Image::new(
+        let player_position = (7, 5);
+        let player_entity = find_and_move_player(game_state, player_position);
+        entities.insert(player_position, player_entity);
+
+        let npc_position = (5, 5);
+        let npc_entity = game_state
+            .world
+            .create_entity()
+            .with(Drawable {
+                drawable: Arc::new(ggez::graphics::Mesh::new_rectangle(
                     ctx,
-                    format!("/spritesheets/{}", tile_set.sprite_sheet_filename),
-                )
+                    ggez::graphics::DrawMode::fill(),
+                    ggez::graphics::Rect::new(
+                        0.,
+                        config::TILE_PIXELS_SIZE_F32 - 24.,
+                        config::TILE_PIXELS_SIZE_F32,
+                        24.,
+                    ),
+                    ggez::graphics::Color::from_rgb(20, 50, 150),
+                )?),
+                draw_params: ggez::graphics::DrawParam::default(),
             })
-            .collect();
-
-        if let Some(Err(e)) = loaded_background_images
-            .iter()
-            .find(|loaded_image| loaded_image.is_err())
-        {
-            return Err(e.clone());
-        }
-
-        let loaded_background_images: Vec<ggez::graphics::Image> = loaded_background_images
-            .into_iter()
-            .map(|loaded_image| loaded_image.unwrap())
-            .collect();
-
-        let background_canvas_width: u16 = loaded_background_images
-            .iter()
-            .map(|image| image.width())
-            .max()
-            .expect("No spritesheets loaded?");
-
-        let background_canvas_height: u16 = loaded_background_images
-            .iter()
-            .map(|image| image.height())
-            .sum::<u16>();
-
-        let background_canvas = ggez::graphics::Canvas::new(
-            ctx,
-            background_canvas_width,
-            background_canvas_height,
-            ggez::conf::NumSamples::One,
-            ggez::graphics::get_window_color_format(ctx),
-        )?;
-
-        let screen_coords = ggez::graphics::screen_coordinates(ctx);
-
-        ggez::graphics::set_canvas(ctx, Some(&background_canvas));
-        ggez::graphics::set_screen_coordinates(
-            ctx,
-            [
-                0.,
-                0.,
-                background_canvas_width as f32,
-                background_canvas_height as f32,
-            ]
-            .into(),
-        )?;
-
-        let mut y_offset = 0.;
-
-        if let Some(Err(e)) = loaded_background_images
-            .iter()
-            .map(|image| {
-                ggez::graphics::draw(
-                    ctx,
-                    image,
-                    // Canvas images are drawn upside down
-                    ggez::graphics::DrawParam::default()
-                        .scale([1., -1.])
-                        .dest([0., y_offset + background_canvas_height as f32]),
-                )?;
-                y_offset -= image.height() as f32;
-
-                Ok(())
+            .with(CurrentPosition {
+                x: npc_position.0 as f32,
+                y: npc_position.1 as f32,
             })
-            .find(|res: &GameResult| res.is_err())
-        {
-            return Err(e);
-        }
-
-        ggez::graphics::set_canvas(ctx, None);
-        ggez::graphics::set_screen_coordinates(ctx, screen_coords)?;
-
-        // REPEAT FOR OVERLAY
-        // TODO: Functions
-
-        let loaded_overlay_images: Vec<GameResult<ggez::graphics::Image>> = tile_map_definition
-            .overlay
-            .tile_sets
-            .iter()
-            .map(|tile_set| {
-                ggez::graphics::Image::new(
-                    ctx,
-                    format!("/spritesheets/{}", tile_set.sprite_sheet_filename),
-                )
+            .with(SpriteSheet::new(vec![
+                SpriteRow::new(1), // IDLE DOWN
+                SpriteRow::new(1), // IDLE RIGHT
+                SpriteRow::new(1), // IDLE UP
+                SpriteRow::new(1), // IDLE LEFT
+                SpriteRow::new(1), // WALK DOWN
+                SpriteRow::new(1), // WALK RIGHT
+                SpriteRow::new(1), // WALK UP
+                SpriteRow::new(1), // WALK LEFT
+            ]))
+            .with(FacingDirection {
+                direction: GameDirection::Down,
             })
-            .collect();
-
-        if let Some(Err(e)) = loaded_overlay_images
-            .iter()
-            .find(|loaded_image| loaded_image.is_err())
-        {
-            return Err(e.clone());
-        }
-
-        let loaded_overlay_images: Vec<ggez::graphics::Image> = loaded_overlay_images
-            .into_iter()
-            .map(|loaded_image| loaded_image.unwrap())
-            .collect();
-
-        let overlay_canvas_width: u16 = loaded_overlay_images
-            .iter()
-            .map(|image| image.width())
-            .max()
-            .expect("No spritesheets loaded?");
-
-        let overlay_canvas_height: u16 = loaded_overlay_images
-            .iter()
-            .map(|image| image.height())
-            .sum::<u16>();
-
-        let overlay_canvas = ggez::graphics::Canvas::new(
-            ctx,
-            overlay_canvas_width,
-            overlay_canvas_height,
-            ggez::conf::NumSamples::One,
-            ggez::graphics::get_window_color_format(ctx),
-        )?;
-
-        let screen_coords = ggez::graphics::screen_coordinates(ctx);
-
-        ggez::graphics::set_canvas(ctx, Some(&overlay_canvas));
-        ggez::graphics::set_screen_coordinates(
-            ctx,
-            [
-                0.,
-                0.,
-                overlay_canvas_width as f32,
-                overlay_canvas_height as f32,
-            ]
-            .into(),
-        )?;
-
-        let mut y_offset = 0.;
-
-        if let Some(Err(e)) = loaded_overlay_images
-            .iter()
-            .map(|image| {
-                ggez::graphics::draw(
-                    ctx,
-                    image,
-                    // Canvas images are drawn upside down
-                    ggez::graphics::DrawParam::default()
-                        .scale([1., -1.])
-                        .dest([0., y_offset + overlay_canvas_height as f32]),
-                )?;
-                y_offset -= image.height() as f32;
-
-                Ok(())
-            })
-            .find(|res: &GameResult| res.is_err())
-        {
-            return Err(e);
-        }
-
-        ggez::graphics::set_canvas(ctx, None);
-        ggez::graphics::set_screen_coordinates(ctx, screen_coords)?;
-
-        let background_sprite_sheets_image = background_canvas.into_inner();
-
-        let background_width =
-            background_sprite_sheets_image.width() as usize / config::TILE_PIXELS_SIZE_USIZE;
-        let background_height =
-            background_sprite_sheets_image.height() as usize / config::TILE_PIXELS_SIZE_USIZE;
-
-        let background_sprite_sheets_batch =
-            ggez::graphics::spritebatch::SpriteBatch::new(background_sprite_sheets_image);
-
-        let overlay_sprite_sheets_image = overlay_canvas.into_inner();
-
-        let overlay_width =
-            overlay_sprite_sheets_image.width() as usize / config::TILE_PIXELS_SIZE_USIZE;
-        let overlay_height =
-            overlay_sprite_sheets_image.height() as usize / config::TILE_PIXELS_SIZE_USIZE;
-
-        let overlay_sprite_sheets_batch =
-            ggez::graphics::spritebatch::SpriteBatch::new(overlay_sprite_sheets_image);
-
-        let tiles = tile_map_definition.build_tiles(game_state, ctx)?;
+            .build();
+        entities.insert(npc_position, npc_entity);
 
         let tile_map_width = tile_map_definition.width;
         let tile_map_height = tile_map_definition.height;
-        let tile_data = tile_map_definition.background.tile_ids;
-        let overlay_data = tile_map_definition.overlay.tile_ids;
 
         game_state.world.insert(CameraBounds {
             min_x: 0.,
@@ -219,57 +75,9 @@ impl PalletTownOverworldScene {
             max_y: tile_map_height as f32 - config::VIEWPORT_TILES_HEIGHT_F32,
         });
 
-        let background_animation: Vec<Frame> = tile_map_definition
-            .background
-            .tile_sets
-            .into_iter()
-            .flat_map(|set| set.tiles)
-            .filter(|t| t.animation.is_some())
-            .map(|t| {
-                let tile_ids: Vec<usize> = t
-                    .animation
-                    .unwrap()
-                    .iter()
-                    .map(|frame| frame.tile_id)
-                    .collect();
+        let tile_map = tile_map_definition.to_tile_map(ctx, &mut entities)?;
 
-                Frame { idx: 0, tile_ids }
-            })
-            .collect();
-
-        let overlay_animation: Vec<Frame> = tile_map_definition
-            .overlay
-            .tile_sets
-            .into_iter()
-            .flat_map(|set| set.tiles)
-            .filter(|t| t.animation.is_some())
-            .map(|t| {
-                let tile_ids: Vec<usize> = t
-                    .animation
-                    .unwrap()
-                    .iter()
-                    .map(|frame| frame.tile_id)
-                    .collect();
-
-                Frame { idx: 0, tile_ids }
-            })
-            .collect();
-
-        game_state.world.insert(TileMap {
-            tiles,
-            tile_indices: tile_data,
-            overlay_indices: overlay_data,
-            background_animation,
-            overlay_animation,
-            to_draw: vec![],
-            overlay: overlay_sprite_sheets_batch,
-            overlay_width,
-            overlay_height,
-            background: background_sprite_sheets_batch,
-            background_width,
-            background_height,
-            background_param: ggez::graphics::DrawParam::default(),
-        });
+        game_state.world.insert(tile_map);
 
         Ok(Self)
     }

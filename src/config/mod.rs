@@ -16,6 +16,8 @@ pub const ASSETS_PATH: &str = "assets";
 
 pub const SETTINGS_FILE_PATH: &str = "/settings.conf";
 
+pub const APPLICATION_ICON_FILE_PATH: &str = "/icon.png";
+
 pub const WALK_SECONDS_PER_TILE: f32 = 0.25;
 pub const WAIT_AFTER_TURN_BEFORE_MOVE: f32 = 0.175;
 

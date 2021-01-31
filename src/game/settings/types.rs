@@ -289,7 +289,7 @@ impl Into<ggez::conf::WindowSetup> for &Settings {
             vsync: true,
             srgb: true,
             title: config::APPLICATION_NAME.to_string(),
-            icon: "/spritesheets/pallet_town_spritesheet.png".to_string(), // TODO
+            icon: config::APPLICATION_ICON_FILE_PATH.to_string(),
             samples: ggez::conf::NumSamples::Zero,
         }
     }

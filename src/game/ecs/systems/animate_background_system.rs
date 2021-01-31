@@ -59,7 +59,7 @@ impl<'a> specs::System<'a> for AnimateBackgroundSystem {
 
                 for y in camera_r.top..camera_r.bottom {
                     for x in camera_r.left..camera_r.right {
-                        if let Some(tile_idx) = &mut tile_map_r.tile_indices[tile_map_width * y + x]
+                        if let Some(tile_idx) = &mut tile_map_r.background_indices[tile_map_width * y + x]
                         {
                             if let Some(new_value) = background_frame_map.get(tile_idx) {
                                 *tile_idx = *new_value;

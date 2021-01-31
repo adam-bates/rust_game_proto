@@ -195,13 +195,13 @@ impl Scene for OverworldScene {
     #[tracing::instrument]
     fn draw(&self, game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
         if let Some(tile_map) = game_state.world.try_fetch::<TileMap>() {
-            tile_map.background.draw(ctx, tile_map.background_param)?;
+            tile_map.background.draw(ctx, tile_map.spritesheet_param)?;
 
             for drawable in &tile_map.to_draw {
                 drawable.drawable.draw(ctx, drawable.draw_params)?;
             }
 
-            tile_map.overlay.draw(ctx, tile_map.background_param)?;
+            tile_map.overlay.draw(ctx, tile_map.spritesheet_param)?;
         }
 
         Ok(())

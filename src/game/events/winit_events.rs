@@ -169,7 +169,6 @@ fn run_update(ctx: &mut ggez::Context, state: &mut game_state::GlobalState) -> G
     if !update_changed {
         // Give CPU room to breathe
         std::thread::yield_now();
-        core::sync::atomic::spin_loop_hint();
     }
 
     Ok(update_changed)
@@ -185,9 +184,7 @@ fn run_draw(ctx: &mut ggez::Context, state: &game_state::GlobalState) -> GameRes
         .render_target
         .draw(state, ctx)?;
 
-    tracing::info_span!("GGEZ Present").in_scope(|| {
-        ggez::graphics::present(ctx).unwrap();
-    });
+    ggez::graphics::present(ctx).unwrap();
 
     Ok(())
 }

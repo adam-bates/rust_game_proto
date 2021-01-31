@@ -1,31 +1,128 @@
 use super::{
     config,
     ecs::{
-        components::{
-            CurrentPosition, Drawable, FacingDirection, Player, SpriteRow, SpriteSheet,
-            TargetPosition,
-        },
-        resources::Tile,
+        components::{CurrentPosition, Player, TargetPosition},
+        resources::{Frame, Tile, TileMap},
     },
     error::types::GameResult,
     game_state::GameState,
-    input::types::GameDirection,
 };
 use serde::{Deserialize, Serialize};
-use specs::{Builder, Entity, Join, WorldExt};
-use std::{collections::HashMap, sync::Arc};
+use specs::{Entity, Join};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TileMapDefinition {
     pub width: usize,
     pub height: usize,
-    pub player_x: usize,
-    pub player_y: usize,
     pub background: TileLayer,
     pub overlay: TileLayer,
 }
 
-fn find_and_move_player(game_state: &mut GameState, position: (usize, usize)) -> Entity {
+fn build_spritesheet_from_layer(
+    layer: &TileLayer,
+    ctx: &mut ggez::Context,
+) -> GameResult<(ggez::graphics::spritebatch::SpriteBatch, usize, usize)> {
+    let loaded_images: Vec<GameResult<ggez::graphics::Image>> = layer
+        .tile_sets
+        .iter()
+        .map(|tile_set| ggez::graphics::Image::new(ctx, tile_set.sprite_sheet_filename.to_string()))
+        .collect();
+
+    if let Some(Err(e)) = loaded_images
+        .iter()
+        .find(|loaded_image| loaded_image.is_err())
+    {
+        return Err(e.clone());
+    }
+
+    let loaded_images: Vec<ggez::graphics::Image> = loaded_images
+        .into_iter()
+        .map(|loaded_image| loaded_image.unwrap())
+        .collect();
+
+    let canvas_width: u16 = loaded_images
+        .iter()
+        .map(|image| image.width())
+        .max()
+        .expect("No spritesheets loaded?");
+
+    let canvas_height: u16 = loaded_images
+        .iter()
+        .map(|image| image.height())
+        .sum::<u16>();
+
+    let canvas = ggez::graphics::Canvas::new(
+        ctx,
+        canvas_width,
+        canvas_height,
+        ggez::conf::NumSamples::One,
+        ggez::graphics::get_window_color_format(ctx),
+    )?;
+
+    let screen_coords = ggez::graphics::screen_coordinates(ctx);
+
+    ggez::graphics::set_canvas(ctx, Some(&canvas));
+    ggez::graphics::set_screen_coordinates(
+        ctx,
+        [0., 0., canvas_width as f32, canvas_height as f32].into(),
+    )?;
+
+    let mut y_offset = 0.;
+
+    if let Some(Err(e)) = loaded_images
+        .iter()
+        .map(|image| {
+            ggez::graphics::draw(
+                ctx,
+                image,
+                // Canvas images are drawn upside down
+                ggez::graphics::DrawParam::default()
+                    .scale([1., -1.])
+                    .dest([0., y_offset + canvas_height as f32]),
+            )?;
+            y_offset -= image.height() as f32;
+
+            Ok(())
+        })
+        .find(|res: &GameResult| res.is_err())
+    {
+        return Err(e);
+    }
+
+    ggez::graphics::set_canvas(ctx, None);
+    ggez::graphics::set_screen_coordinates(ctx, screen_coords)?;
+
+    let spritesheet_image = canvas.into_inner();
+
+    let width = spritesheet_image.width() as usize / config::TILE_PIXELS_SIZE_USIZE;
+    let height = spritesheet_image.height() as usize / config::TILE_PIXELS_SIZE_USIZE;
+
+    let spritesheet = ggez::graphics::spritebatch::SpriteBatch::new(spritesheet_image);
+
+    Ok((spritesheet, width, height))
+}
+
+fn build_animation_from_layer(layer: TileLayer) -> Vec<Frame> {
+    layer
+        .tile_sets
+        .into_iter()
+        .flat_map(|set| set.tiles)
+        .filter(|t| t.animation.is_some())
+        .map(|t| {
+            let tile_ids: Vec<usize> = t
+                .animation
+                .unwrap()
+                .iter()
+                .map(|frame| frame.tile_id)
+                .collect();
+
+            Frame { idx: 0, tile_ids }
+        })
+        .collect()
+}
+
+pub fn find_and_move_player(game_state: &mut GameState, position: (usize, usize)) -> Entity {
     let (player_c, mut current_position_c, mut target_position_c): (
         specs::ReadStorage<Player>,
         specs::WriteStorage<CurrentPosition>,
@@ -76,50 +173,46 @@ impl TileMapDefinition {
         })
     }
 
+    pub fn to_tile_map(
+        self,
+        ctx: &mut ggez::Context,
+        entities: &mut HashMap<(usize, usize), Entity>,
+    ) -> GameResult<TileMap> {
+        let (background_spritesheet, background_width, background_height) =
+            build_spritesheet_from_layer(&self.background, ctx)?;
+
+        let (overlay_spritesheet, overlay_width, overlay_height) =
+            build_spritesheet_from_layer(&self.overlay, ctx)?;
+
+        let tiles = self.build_tiles(entities)?;
+
+        let background_indices = self.background.tile_ids.clone();
+        let overlay_indices = self.overlay.tile_ids.clone();
+
+        let background_animation = build_animation_from_layer(self.background);
+        let overlay_animation = build_animation_from_layer(self.overlay);
+
+        Ok(TileMap {
+            tiles,
+            background_indices,
+            overlay_indices,
+            background_animation,
+            overlay_animation,
+            background: background_spritesheet,
+            background_width,
+            background_height,
+            overlay: overlay_spritesheet,
+            overlay_width,
+            overlay_height,
+            spritesheet_param: ggez::graphics::DrawParam::default(),
+            to_draw: vec![],
+        })
+    }
+
     pub fn build_tiles(
         &self,
-        game_state: &mut GameState,
-        ctx: &mut ggez::Context,
+        entities: &mut HashMap<(usize, usize), Entity>,
     ) -> GameResult<Vec<Vec<Tile>>> {
-        let player_position = (
-            self.player_x / config::TILE_PIXELS_SIZE_USIZE,
-            self.player_y / config::TILE_PIXELS_SIZE_USIZE,
-        );
-        let player_entity = find_and_move_player(game_state, player_position);
-
-        let npc_entity = game_state
-            .world
-            .create_entity()
-            .with(Drawable {
-                drawable: Arc::new(ggez::graphics::Mesh::new_rectangle(
-                    ctx,
-                    ggez::graphics::DrawMode::fill(),
-                    ggez::graphics::Rect::new(
-                        0.,
-                        config::TILE_PIXELS_SIZE_F32 - 24.,
-                        config::TILE_PIXELS_SIZE_F32,
-                        24.,
-                    ),
-                    ggez::graphics::Color::from_rgb(20, 50, 150),
-                )?),
-                draw_params: ggez::graphics::DrawParam::default(),
-            })
-            .with(CurrentPosition { x: 5., y: 5. })
-            .with(SpriteSheet::new(vec![
-                SpriteRow::new(1), // IDLE DOWN
-                SpriteRow::new(1), // IDLE RIGHT
-                SpriteRow::new(1), // IDLE UP
-                SpriteRow::new(1), // IDLE LEFT
-                SpriteRow::new(1), // WALK DOWN
-                SpriteRow::new(1), // WALK RIGHT
-                SpriteRow::new(1), // WALK UP
-                SpriteRow::new(1), // WALK LEFT
-            ]))
-            .with(FacingDirection {
-                direction: GameDirection::Down,
-            })
-            .build();
-
         let id_tile_types =
             self.background
                 .tile_sets
@@ -138,13 +231,7 @@ impl TileMapDefinition {
             let mut x_tiles = vec![];
 
             for x in 0..self.width {
-                let entity = if x == player_position.0 && y == player_position.1 {
-                    Some(player_entity)
-                } else if x == 5 && y == 5 {
-                    Some(npc_entity)
-                } else {
-                    None
-                };
+                let entity = entities.remove(&(x, y));
 
                 x_tiles.push(Tile {
                     entity,
@@ -188,4 +275,11 @@ pub struct MapTile {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MapTileAnimationFrame {
     pub tile_id: usize,
+}
+
+#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq)]
+pub enum EntityType {
+    Sign { id: u8 },
+    Player,
+    WiseOldMan,
 }
