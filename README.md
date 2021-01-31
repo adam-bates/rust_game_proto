@@ -6,6 +6,6 @@
 cargo run --release
 
 # With profiling
-cat ./tracing/tracing.folded | inferno-flamegraph --flamechart > ./tracing/tracing-flamechart.svg
-cat ./tracing/tracing.folded | inferno-flamegraph > ./tracing/tracing-flamegraph.svg
+cat ./tracing/tracing.folded | inferno-flamegraph --flamechart > ./tracing/flamechart.svg
+cat ./tracing/tracing.folded | inferno-flamegraph > ./tracing/flamegraph.svg
 ```
