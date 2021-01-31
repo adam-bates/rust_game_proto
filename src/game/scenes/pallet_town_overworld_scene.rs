@@ -19,6 +19,8 @@ pub struct PalletTownOverworldScene;
 
 impl PalletTownOverworldScene {
     pub fn new(game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
+        // TODO: Take in player save information to derive player location, and any npc locations if already encountered
+
         let tile_map_definition = TileMapDefinition::load_from_file(ctx, TILE_MAP_DEFINITION_FILE)?;
 
         let mut entities = HashMap::new();
