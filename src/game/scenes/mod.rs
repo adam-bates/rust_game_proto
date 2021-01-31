@@ -10,4 +10,4 @@ pub use main_menu_scene::MainMenuScene;
 pub use overworld_scene::OverworldScene;
 pub use pallet_town_overworld_scene::PalletTownOverworldScene;
 
-use super::{config, ecs, error, game_state, input, maps};
+use super::{config, ecs, error, game_state, input, maps, settings};

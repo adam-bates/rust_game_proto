@@ -15,26 +15,30 @@ pub fn find_or_default_for_user(
     }
 }
 
-fn get_current_monitor(ctx: &mut ggez::Context) -> GameResult<winit::monitor::MonitorHandle> {
+pub fn get_current_monitor(ctx: &mut ggez::Context) -> GameResult<winit::monitor::MonitorHandle> {
     let window = ggez::graphics::window(ctx);
     window
         .current_monitor()
         .ok_or_else(|| ggez::GameError::VideoError("Couldn't find current monitor".to_string()))
 }
 
-fn set_window_to_half_resolution(
-    ctx: &mut ggez::Context,
-    user_settings: &mut Settings,
-) -> GameResult {
+pub fn get_current_monitor_resolution(ctx: &mut ggez::Context) -> GameResult<(f32, f32)> {
     let monitor = get_current_monitor(ctx)?;
     let monitor_dimensions = monitor.size();
 
     let hidpi_factor = monitor.scale_factor();
 
-    let max_resolution = (
+    Ok((
         (monitor_dimensions.width as f64 / hidpi_factor) as f32,
         (monitor_dimensions.height as f64 / hidpi_factor) as f32,
-    );
+    ))
+}
+
+fn set_window_to_half_resolution(
+    ctx: &mut ggez::Context,
+    user_settings: &mut Settings,
+) -> GameResult {
+    let max_resolution = get_current_monitor_resolution(ctx)?;
 
     user_settings.video_settings.windowed_width = (max_resolution.0 / 2.) as usize;
     user_settings.video_settings.windowed_height = (max_resolution.1 / 2.) as usize;

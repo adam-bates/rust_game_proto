@@ -1,7 +1,8 @@
 use super::{error::types::GameResult, game_state::GameState, input::types::GameInput};
 use std::{cell::RefCell, rc::Rc};
 
-pub type SceneBuilder = Box<dyn Fn(&mut ggez::Context) -> GameResult<Rc<RefCell<dyn Scene>>>>;
+pub type SceneBuilder =
+    Box<dyn Fn(&mut GameState, &mut ggez::Context) -> GameResult<Rc<RefCell<dyn Scene>>>>;
 
 pub enum SceneSwitch {
     Pop,
@@ -12,6 +13,14 @@ pub enum SceneSwitch {
 
 pub trait Scene {
     fn dispose(&mut self, game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult;
+
+    fn on_create(
+        &mut self,
+        _game_state: &mut GameState,
+        _ctx: &mut ggez::Context,
+    ) -> GameResult<Option<SceneSwitch>> {
+        Ok(None)
+    }
 
     fn update(
         &mut self,
@@ -195,8 +204,17 @@ impl SceneManager {
             }
         }
 
-        let scene = scene_builder(ctx)?;
+        let scene = scene_builder(game_state, ctx)?;
         self.push(ctx, scene);
+
+        let switch = self
+            .unchecked_current()
+            .borrow_mut()
+            .on_create(game_state, ctx)?;
+
+        if let Some(switch) = switch {
+            self.switch(game_state, ctx, switch)?;
+        }
 
         Ok(())
     }
@@ -213,8 +231,17 @@ impl SceneManager {
                 .dispose(game_state, ctx)?;
         }
 
-        let scene = scene_builder(ctx)?;
+        let scene = scene_builder(game_state, ctx)?;
         self.push(ctx, scene);
+
+        let switch = self
+            .unchecked_current()
+            .borrow_mut()
+            .on_create(game_state, ctx)?;
+
+        if let Some(switch) = switch {
+            self.switch(game_state, ctx, switch)?;
+        }
 
         Ok(())
     }
@@ -231,8 +258,17 @@ impl SceneManager {
             }
         }
 
-        let scene = scene_builder(ctx)?;
+        let scene = scene_builder(game_state, ctx)?;
         self.push(ctx, scene);
+
+        let switch = self
+            .unchecked_current()
+            .borrow_mut()
+            .on_create(game_state, ctx)?;
+
+        if let Some(switch) = switch {
+            self.switch(game_state, ctx, switch)?;
+        }
 
         Ok(())
     }
@@ -249,8 +285,17 @@ impl SceneManager {
                 .dispose(game_state, ctx)?;
         }
 
-        let scene = scene_builder(ctx)?;
+        let scene = scene_builder(game_state, ctx)?;
         self.push(ctx, scene);
+
+        let switch = self
+            .unchecked_current()
+            .borrow_mut()
+            .on_create(game_state, ctx)?;
+
+        if let Some(switch) = switch {
+            self.switch(game_state, ctx, switch)?;
+        }
 
         Ok(())
     }
@@ -304,8 +349,17 @@ impl SceneManager {
         match switch {
             SceneSwitch::Pop => return Ok(self.pop(ctx)),
             SceneSwitch::Push(builder) => {
-                let new = builder(ctx)?;
-                self.push(ctx, new)
+                let new = builder(game_state, ctx)?;
+                self.push(ctx, new);
+
+                let switch = self
+                    .unchecked_current()
+                    .borrow_mut()
+                    .on_create(game_state, ctx)?;
+
+                if let Some(switch) = switch {
+                    self.switch(game_state, ctx, switch)?;
+                }
             }
             SceneSwitch::ReplaceTop(builder) => self.replace_top(game_state, ctx, builder)?,
             SceneSwitch::ReplaceAll(builder) => self.replace_all(game_state, ctx, builder)?,
@@ -323,8 +377,17 @@ impl SceneManager {
         match switch {
             SceneSwitch::Pop => return Ok(Some(self.unchecked_pop(ctx))),
             SceneSwitch::Push(builder) => {
-                let new = builder(ctx)?;
+                let new = builder(game_state, ctx)?;
                 self.push(ctx, new);
+
+                let switch = self
+                    .unchecked_current()
+                    .borrow_mut()
+                    .on_create(game_state, ctx)?;
+
+                if let Some(switch) = switch {
+                    self.switch(game_state, ctx, switch)?;
+                }
             }
             SceneSwitch::ReplaceTop(builder) => {
                 self.unchecked_replace_top(game_state, ctx, builder)?

@@ -3,32 +3,48 @@ use super::{
     error::types::GameResult,
     game_state::GameState,
     input::types::{GameButton, GameInput},
-    types::{Scene, SceneSwitch},
+    settings,
+    types::{Scene, SceneBuilder, SceneSwitch},
+    InGameScene,
 };
+use ggez::graphics::Drawable as GgezDrawable;
+use std::{cell::RefCell, rc::Rc};
 
 pub struct MainMenuScene {
-    mesh: ggez::graphics::Mesh,
-    mesh_param: ggez::graphics::DrawParam,
-    rotation: f32,
+    background_color: ggez::graphics::Color,
+    text: ggez::graphics::Text,
+    text_param: ggez::graphics::DrawParam,
 }
 
 impl MainMenuScene {
-    pub fn new(ctx: &mut ggez::Context) -> GameResult<Self> {
-        let mesh = ggez::graphics::Mesh::new_rectangle(
-            ctx,
-            ggez::graphics::DrawMode::fill(),
-            ggez::graphics::Rect::new(0., 0., 5., 50.),
-            ggez::graphics::Color::from_rgb(255, 50, 50),
-        )?;
-        let mesh_param = ggez::graphics::DrawParam::default().dest([
-            config::VIEWPORT_PIXELS_WIDTH_F32 / 2.,
-            config::VIEWPORT_PIXELS_HEIGHT_F32 / 2.,
-        ]);
+    pub fn new(_game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
+        let resolution = settings::get_current_monitor_resolution(ctx)?;
+
+        let monitor_scale_width = resolution.0 / config::VIEWPORT_PIXELS_WIDTH_F32;
+        let monitor_scale_height = resolution.1 / config::VIEWPORT_PIXELS_HEIGHT_F32;
+
+        // Render text at monitor resolution for smooth resizing
+        let text_scale = monitor_scale_width.max(monitor_scale_height);
+
+        let font = ggez::graphics::Font::new(ctx, "/fonts/DejaVuSansMono.ttf")?;
+        let text = ggez::graphics::Text::new(
+            ggez::graphics::TextFragment::new("Press Start")
+                .font(font)
+                .scale(ggez::graphics::PxScale::from(15. * text_scale))
+                .color(ggez::graphics::Color::from_rgb(50, 0, 200)),
+        );
+
+        let text_pos_x =
+            (text_scale * config::VIEWPORT_PIXELS_WIDTH_F32 - text.width(ctx) as f32) / 2.;
+        let text_pos_y =
+            (text_scale * config::VIEWPORT_PIXELS_HEIGHT_F32 - text.height(ctx) as f32) / 2.;
 
         Ok(Self {
-            mesh,
-            mesh_param,
-            rotation: 0f32.atan2(0f32),
+            background_color: ggez::graphics::Color::from_rgb(112, 200, 160),
+            text,
+            text_param: ggez::graphics::DrawParam::default()
+                .dest([text_pos_x / text_scale, text_pos_y / text_scale])
+                .scale([1. / text_scale, 1. / text_scale]),
         })
     }
 }
@@ -56,8 +72,9 @@ impl Scene for MainMenuScene {
 
     #[tracing::instrument]
     fn draw(&self, _game_state: &GameState, ctx: &mut ggez::Context) -> GameResult {
-        ggez::graphics::clear(ctx, ggez::graphics::WHITE);
-        ggez::graphics::draw(ctx, &self.mesh, self.mesh_param.rotation(self.rotation))?;
+        ggez::graphics::clear(ctx, self.background_color);
+
+        self.text.draw(ctx, self.text_param)?;
 
         Ok(())
     }
@@ -65,18 +82,23 @@ impl Scene for MainMenuScene {
     fn input(
         &mut self,
         _game_state: &mut GameState,
-        ctx: &mut ggez::Context,
+        _ctx: &mut ggez::Context,
         input: GameInput,
     ) -> GameResult<Option<SceneSwitch>> {
-        if ggez::input::keyboard::is_mod_active(ctx, ggez::input::keyboard::KeyMods::CTRL) {
-            match input {
-                GameInput::Button { button, .. } => match button {
-                    GameButton::Select => return Ok(Some(SceneSwitch::Pop)),
-                    _ => {}
-                },
-                // ggez::event::KeyCode::S => self.settings.save(),
+        match input {
+            GameInput::Button { button, .. } => match button {
+                GameButton::Primary | GameButton::Start => {
+                    let scene_builder: SceneBuilder = Box::new(|game_state, ctx| {
+                        let scene = InGameScene::new(game_state, ctx)?;
+
+                        Ok(Rc::new(RefCell::new(scene)))
+                    });
+
+                    return Ok(Some(SceneSwitch::ReplaceAll(scene_builder)));
+                }
                 _ => {}
-            }
+            },
+            _ => {}
         }
         Ok(None)
     }

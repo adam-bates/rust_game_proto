@@ -4,7 +4,8 @@ use super::{
     input::types::GameInput,
     render::state::RenderState,
     scenes::{
-        types::SceneManager, InGameScene, MainMenuScene, OverworldScene, PalletTownOverworldScene,
+        types::{SceneBuilder, SceneManager, SceneSwitch},
+        MainMenuScene,
     },
     settings::{AspectRatio, Settings},
     world,
@@ -55,19 +56,14 @@ impl GlobalState {
     pub fn new(ctx: &mut ggez::Context, settings: Settings) -> GameResult<Self> {
         let mut game_state = GameState::new(ctx, settings)?;
 
+        let scene_builder: SceneBuilder = Box::new(|game_state, ctx| {
+            let scene = MainMenuScene::new(game_state, ctx)?;
+
+            Ok(Rc::new(RefCell::new(scene)))
+        });
+
         let mut scene_manager = SceneManager::default();
-
-        let scene = Rc::new(RefCell::new(InGameScene::new(&mut game_state, ctx)?));
-        scene_manager.push(ctx, scene);
-
-        let scene = Rc::new(RefCell::new(OverworldScene::new(&mut game_state, ctx)?));
-        scene_manager.push(ctx, scene);
-
-        let scene = Rc::new(RefCell::new(PalletTownOverworldScene::new(
-            &mut game_state,
-            ctx,
-        )?));
-        scene_manager.push(ctx, scene);
+        scene_manager.switch(&mut game_state, ctx, SceneSwitch::ReplaceAll(scene_builder))?;
 
         Ok(Self {
             scene_manager,
@@ -120,7 +116,6 @@ impl events::EventHandler for GlobalState {
         Ok(())
     }
 
-
     #[tracing::instrument(name = "GlobalState::draw")]
     fn draw(&self, ctx: &mut ggez::Context) -> GameResult {
         for scene in self.scene_manager.draw_stack() {
@@ -168,14 +163,6 @@ impl events::EventHandler for GlobalState {
                     self.game_state
                         .render_state
                         .refresh(ctx, &self.game_state.settings.video_settings.aspect_ratio)?;
-                }
-                ggez::input::keyboard::KeyCode::M => {
-                    println!("Replacing top");
-                    self.scene_manager.replace_top(
-                        &mut self.game_state,
-                        ctx,
-                        Box::new(|ctx| Ok(Rc::new(RefCell::new(MainMenuScene::new(ctx)?)))),
-                    )?;
                 }
                 // ggez::event::KeyCode::S => self.settings.save(),
                 _ => {}

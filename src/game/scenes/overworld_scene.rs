@@ -16,12 +16,12 @@ use super::{
     error::types::GameResult,
     game_state::GameState,
     input::types::{GameButton, GameDirection, GameInput},
-    types::{Scene, SceneSwitch},
+    types::{Scene, SceneBuilder, SceneSwitch},
+    PalletTownOverworldScene,
 };
-use config::TILE_PIXELS_SIZE_F32;
 use ggez::graphics::Drawable as GgezDrawable;
 use specs::{Builder, Join, WorldExt};
-use std::{path::PathBuf, sync::Arc};
+use std::{cell::RefCell, path::PathBuf, rc::Rc, sync::Arc};
 
 const PLAYER_FILE: &str = "/spritesheets/entities/player.png";
 
@@ -131,10 +131,18 @@ impl OverworldScene {
         let player_offset_x = (player_width - config::TILE_PIXELS_SIZE_F32) / (player_width * 2.);
         let player_offset_y = (player_height - config::TILE_PIXELS_SIZE_F32) / player_height;
 
+        // IDK why these numbers work but they make the sprites pixel-precise when offset
+        // Otherwise the offset isn't correct and pixels bleed past where they should
+        // (noticeable when the bottom pixels bleed past an overlay sprite)
+        const OFFSET_FIX_X: f32 = -0.001;
+        const OFFSET_FIX_Y: f32 = 0.02;
+
         // Bottom of image should be level with floor
         // And sides of image should be centered
-        let player_draw_param =
-            ggez::graphics::DrawParam::default().offset([player_offset_x, player_offset_y]);
+        let player_draw_param = ggez::graphics::DrawParam::default().offset([
+            player_offset_x + OFFSET_FIX_X,
+            player_offset_y + OFFSET_FIX_Y,
+        ]);
 
         let player_entity = game_state
             .world
@@ -187,6 +195,19 @@ impl Scene for OverworldScene {
         }
 
         Ok(())
+    }
+
+    fn on_create(
+        &mut self,
+        game_state: &mut GameState,
+        ctx: &mut ggez::Context,
+    ) -> GameResult<Option<SceneSwitch>> {
+        let scene_builder: SceneBuilder = Box::new(|game_state, ctx| {
+            let scene = PalletTownOverworldScene::new(game_state, ctx)?;
+            Ok(Rc::new(RefCell::new(scene)))
+        });
+
+        Ok(Some(SceneSwitch::Push(scene_builder)))
     }
 
     #[tracing::instrument]

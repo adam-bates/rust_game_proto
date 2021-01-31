@@ -3,8 +3,10 @@ use super::{
     error::types::GameResult,
     game_state::GameState,
     input::types::GameInput,
-    types::{Scene, SceneSwitch},
+    types::{Scene, SceneBuilder, SceneSwitch},
+    OverworldScene,
 };
+use std::{cell::RefCell, rc::Rc};
 
 pub struct InGameScene;
 
@@ -30,6 +32,19 @@ impl Scene for InGameScene {
     fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<DeltaTime>();
         Ok(())
+    }
+
+    fn on_create(
+        &mut self,
+        game_state: &mut GameState,
+        ctx: &mut ggez::Context,
+    ) -> GameResult<Option<SceneSwitch>> {
+        let scene_builder: SceneBuilder = Box::new(|game_state, ctx| {
+            let scene = OverworldScene::new(game_state, ctx)?;
+            Ok(Rc::new(RefCell::new(scene)))
+        });
+
+        Ok(Some(SceneSwitch::Push(scene_builder)))
     }
 
     #[tracing::instrument]
