@@ -100,6 +100,10 @@ impl events::EventHandler for GlobalState {
             scene_switch = scene
                 .borrow_mut()
                 .update(&mut self.game_state, ctx, self.delta_secs)?;
+
+            if scene_switch.is_some() {
+                break;
+            }
         }
 
         self.game_state.world.maintain();
@@ -177,6 +181,10 @@ impl events::EventHandler for GlobalState {
                     scene
                         .borrow_mut()
                         .input(&mut self.game_state, ctx, game_input.clone())?;
+
+                if scene_switch.is_some() {
+                    break;
+                }
             }
 
             if let Some(scene_switch) = scene_switch {
@@ -207,6 +215,10 @@ impl events::EventHandler for GlobalState {
                     scene
                         .borrow_mut()
                         .input(&mut self.game_state, ctx, game_input.clone())?;
+
+                if scene_switch.is_some() {
+                    break;
+                }
             }
 
             if let Some(scene_switch) = scene_switch {
@@ -238,6 +250,10 @@ impl events::EventHandler for GlobalState {
                     scene
                         .borrow_mut()
                         .input(&mut self.game_state, ctx, game_input.clone())?;
+
+                if scene_switch.is_some() {
+                    break;
+                }
             }
 
             if let Some(scene_switch) = scene_switch {
@@ -269,6 +285,10 @@ impl events::EventHandler for GlobalState {
                     scene
                         .borrow_mut()
                         .input(&mut self.game_state, ctx, game_input.clone())?;
+
+                if scene_switch.is_some() {
+                    break;
+                }
             }
 
             if let Some(scene_switch) = scene_switch {
@@ -333,6 +353,10 @@ impl events::EventHandler for GlobalState {
                 scene
                     .borrow_mut()
                     .input(&mut self.game_state, ctx, game_input.clone())?;
+
+            if scene_switch.is_some() {
+                break;
+            }
         }
 
         if let Some(scene_switch) = scene_switch {

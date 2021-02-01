@@ -17,7 +17,7 @@ use super::{
     game_state::GameState,
     input::types::{GameButton, GameDirection, GameInput},
     types::{Scene, SceneBuilder, SceneSwitch},
-    PalletTownOverworldScene,
+    PalletTownOverworldScene, TextBoxScene,
 };
 use ggez::graphics::Drawable as GgezDrawable;
 use specs::{Builder, Join, WorldExt};
@@ -311,6 +311,19 @@ impl Scene for OverworldScene {
                                                     "Interact with entity: {:?}",
                                                     target_entity
                                                 );
+
+                                                // TODO: if entity has a spritesheet and/or a facing direction, then turn entity to face player
+
+                                                // TODO: get interactable component from entity which can define how they should interact
+
+                                                let scene_builder: SceneBuilder =
+                                                    Box::new(|_, _| {
+                                                        let scene =
+                                                            TextBoxScene::new("HELLO WORLD :D");
+                                                        Ok(Rc::new(RefCell::new(scene)))
+                                                    });
+
+                                                return Ok(Some(SceneSwitch::Push(scene_builder)));
                                             }
                                         }
                                     }
