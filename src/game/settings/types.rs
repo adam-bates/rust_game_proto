@@ -96,9 +96,9 @@ fn build_default_controller_button_mappings() -> HashMap<gilrs::Button, GameButt
     mappings.insert(gilrs::Button::Select, GameButton::Select);
     mappings.insert(gilrs::Button::Mode, GameButton::Start);
     mappings.insert(gilrs::Button::North, GameButton::Secondary);
-    mappings.insert(gilrs::Button::East, GameButton::Primary);
+    mappings.insert(gilrs::Button::East, GameButton::Secondary);
     mappings.insert(gilrs::Button::South, GameButton::Primary);
-    mappings.insert(gilrs::Button::West, GameButton::Secondary);
+    mappings.insert(gilrs::Button::West, GameButton::Primary);
     mappings
 }
 
