@@ -17,7 +17,7 @@ use super::{
     game_state::GameState,
     input::types::{GameButton, GameDirection, GameInput},
     types::{Scene, SceneBuilder, SceneSwitch},
-    PalletTownOverworldScene, TextBoxScene,
+    PalletTownOverworldScene, PauseMenuScene, TextBoxScene,
 };
 use ggez::graphics::Drawable as GgezDrawable;
 use specs::{Builder, Join, WorldExt};
@@ -248,6 +248,20 @@ impl Scene for OverworldScene {
         if let Some(player_movement_request) = game_state.world.get_mut::<PlayerMovementRequest>() {
             match input {
                 GameInput::Button { button, pressed } => match button {
+                    GameButton::Start => {
+                        if pressed {
+                            let scene_builder: SceneBuilder = Box::new(|_, _| {
+                                let scene = PauseMenuScene::new();
+                                Ok(Rc::new(RefCell::new(scene)))
+                            });
+
+                            player_movement_request.last_requested_direction = None;
+                            player_movement_request.last_requested_x_direction = None;
+                            player_movement_request.last_requested_y_direction = None;
+
+                            return Ok(Some(SceneSwitch::Push(scene_builder)));
+                        }
+                    }
                     GameButton::Primary => {
                         if pressed {
                             if let Some(tile_map) = game_state.world.try_fetch::<TileMap>() {
