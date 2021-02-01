@@ -9,6 +9,7 @@ pub struct AnimateSystem {
     pub timer: Timer,
 }
 
+// TODO: Look at offsetting some animation frames to make world look more fluid
 impl<'a> specs::System<'a> for AnimateSystem {
     type SystemData = (
         Option<specs::Write<'a, TileMap>>,

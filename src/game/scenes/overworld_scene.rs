@@ -236,6 +236,7 @@ impl Scene for OverworldScene {
         Ok(())
     }
 
+    // TODO: Look for facing entity when trying to interact
     fn input(
         &mut self,
         game_state: &mut GameState,
