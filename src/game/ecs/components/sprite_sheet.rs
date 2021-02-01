@@ -50,6 +50,15 @@ impl SpriteSheet {
         &self.sprite_rows[self.idx]
     }
 
+    pub fn set_frame(&mut self, idx: usize) {
+        let sprite_row = &mut self.sprite_rows[self.idx];
+
+        if sprite_row.idx != idx {
+            sprite_row.idx = idx;
+            self.refresh();
+        }
+    }
+
     pub fn next_frame(&mut self) {
         self.sprite_rows[self.idx].next_frame();
         self.refresh();
@@ -58,6 +67,13 @@ impl SpriteSheet {
     pub fn prev_frame(&mut self) {
         self.sprite_rows[self.idx].prev_frame();
         self.refresh();
+    }
+
+    pub fn set_row(&mut self, idx: usize) {
+        if self.idx != idx {
+            self.idx = idx;
+            self.refresh();
+        }
     }
 
     pub fn next_row(&mut self) {
@@ -85,14 +101,15 @@ impl SpriteSheet {
         let width = sprite_row.frames as f32;
         let height = sprite_rows.len() as f32;
 
-        let idx = width * idx as f32 + sprite_row.idx as f32;
+        let x = sprite_row.idx as f32;
+        let y = idx as f32;
 
         let inverse_width = 1. / width;
         let inverse_height = 1. / height;
 
         ggez::graphics::Rect::new(
-            (idx % width) * inverse_width,
-            (idx / width) * inverse_height,
+            x * inverse_width,
+            y * inverse_height,
             inverse_width,
             inverse_height,
         )

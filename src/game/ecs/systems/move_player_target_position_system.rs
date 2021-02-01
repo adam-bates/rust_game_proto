@@ -93,13 +93,12 @@ fn move_target_position<'a>(
         target_position.y = target_position_y;
         target_position.is_moving = true;
 
-        sprite_sheet.idx = match direction {
+        sprite_sheet.set_row(match direction {
             GameDirection::Down => config::ENTITY_SPRITE_SHEET_IDX_WALK_DOWN,
             GameDirection::Right => config::ENTITY_SPRITE_SHEET_IDX_WALK_RIGHT,
             GameDirection::Up => config::ENTITY_SPRITE_SHEET_IDX_WALK_UP,
             GameDirection::Left => config::ENTITY_SPRITE_SHEET_IDX_WALK_LEFT,
-        };
-        sprite_sheet.refresh();
+        });
     }
 }
 
@@ -157,13 +156,12 @@ fn handle_input<'a>(
                     );
                 }
             } else if !target_position.is_moving {
-                sprite_sheet.idx = match facing_direction.direction {
+                sprite_sheet.set_row(match facing_direction.direction {
                     GameDirection::Down => config::ENTITY_SPRITE_SHEET_IDX_IDLE_DOWN,
                     GameDirection::Left => config::ENTITY_SPRITE_SHEET_IDX_IDLE_LEFT,
                     GameDirection::Up => config::ENTITY_SPRITE_SHEET_IDX_IDLE_UP,
                     GameDirection::Right => config::ENTITY_SPRITE_SHEET_IDX_IDLE_RIGHT,
-                };
-                sprite_sheet.refresh();
+                });
             }
         }
     }
@@ -271,13 +269,12 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                 let facing_direction = facing_direction as &mut FacingDirection;
 
                 if !target_position.is_moving || timer.finished() {
-                    sprite_sheet.idx = match facing_direction.direction {
+                    sprite_sheet.set_row(match facing_direction.direction {
                         GameDirection::Down => config::ENTITY_SPRITE_SHEET_IDX_IDLE_DOWN,
                         GameDirection::Left => config::ENTITY_SPRITE_SHEET_IDX_IDLE_LEFT,
                         GameDirection::Up => config::ENTITY_SPRITE_SHEET_IDX_IDLE_UP,
                         GameDirection::Right => config::ENTITY_SPRITE_SHEET_IDX_IDLE_RIGHT,
-                    };
-                    sprite_sheet.refresh();
+                    });
                 }
             }
         }

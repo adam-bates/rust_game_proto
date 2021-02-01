@@ -7,7 +7,7 @@ use super::{
         },
         resources::{Camera, PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
         systems::{
-            AnimateBackgroundSystem, FillTileMapToDrawSystem, FollowPlayerSystem,
+            AnimateSystem, FillTileMapToDrawSystem, FollowPlayerSystem,
             MoveBackgroundDrawParamSystem, MoveCurrentPositionSystem,
             MovePlayerTargetPositionSystem, UpdateBackgroundTilesSystem, UpdateDrawParamSystem,
             UpdateSpriteSheetDrawParamSystem,
@@ -95,7 +95,7 @@ impl OverworldScene {
                 ],
             )
             .with(
-                AnimateBackgroundSystem {
+                AnimateSystem {
                     timer: Timer::new(std::time::Duration::from_secs_f32(0.5), true),
                 },
                 "animate_background_system",
