@@ -38,7 +38,7 @@ pub trait Scene {
         input: GameInput,
     ) -> GameResult<Option<SceneSwitch>>;
 
-    fn should_draw_previous(&self) -> bool {
+    fn should_input_previous(&self) -> bool {
         false
     }
 
@@ -46,7 +46,25 @@ pub trait Scene {
         false
     }
 
+    fn should_draw_previous(&self) -> bool {
+        false
+    }
+
     fn name(&self) -> &str;
+}
+
+fn build_input_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<RefCell<dyn Scene>>> {
+    let mut input_stack = vec![];
+
+    if let Some((head, rest_of_stack)) = source_stack.split_last() {
+        if head.borrow().should_input_previous() {
+            input_stack.append(&mut build_input_stack_from(rest_of_stack));
+        }
+
+        input_stack.push(Rc::clone(head));
+    }
+
+    input_stack
 }
 
 fn build_update_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<RefCell<dyn Scene>>> {
@@ -80,6 +98,7 @@ fn build_draw_stack_from(source_stack: &[Rc<RefCell<dyn Scene>>]) -> Vec<Rc<RefC
 #[derive(Default)]
 pub struct SceneManager {
     scene_stack: Vec<Rc<RefCell<dyn Scene>>>,
+    input_stack: Vec<Rc<RefCell<dyn Scene>>>,
     update_stack: Vec<Rc<RefCell<dyn Scene>>>,
     draw_stack: Vec<Rc<RefCell<dyn Scene>>>,
 }
@@ -108,8 +127,9 @@ impl std::fmt::Debug for SceneManager {
             .fold(first_scene_name, |acc, name| format!("{}, {}", acc, name));
 
         f.write_str(&format!(
-            "SceneManager {{ scene_stack: [{}], update_top_n: {}, draw_top_n: {} }}",
+            "SceneManager {{ scene_stack: [{}], input_stack::len: {}, update_stack::len: {}, draw_stack::len: {} }}",
             scene_stack_names,
+            self.input_stack.len(),
             self.update_stack.len(),
             self.draw_stack.len(),
         ))
@@ -117,6 +137,10 @@ impl std::fmt::Debug for SceneManager {
 }
 
 impl SceneManager {
+    pub fn input_stack(&mut self) -> &mut Vec<Rc<RefCell<dyn Scene>>> {
+        &mut self.input_stack
+    }
+
     pub fn update_stack(&mut self) -> &mut Vec<Rc<RefCell<dyn Scene>>> {
         &mut self.update_stack
     }
@@ -127,6 +151,11 @@ impl SceneManager {
 
     pub fn push(&mut self, ctx: &mut ggez::Context, scene: Rc<RefCell<dyn Scene>>) {
         ggez::graphics::clear(ctx, ggez::graphics::BLACK);
+
+        if !scene.borrow().should_input_previous() {
+            self.input_stack.clear();
+        }
+        self.input_stack.push(Rc::clone(&scene));
 
         if !scene.borrow().should_update_previous() {
             self.update_stack.clear();
@@ -141,6 +170,10 @@ impl SceneManager {
         self.scene_stack.push(scene);
     }
 
+    fn build_input_stack(&mut self) -> Vec<Rc<RefCell<dyn Scene>>> {
+        build_input_stack_from(self.scene_stack.as_slice())
+    }
+
     fn build_update_stack(&mut self) -> Vec<Rc<RefCell<dyn Scene>>> {
         build_update_stack_from(self.scene_stack.as_slice())
     }
@@ -153,10 +186,23 @@ impl SceneManager {
         ggez::graphics::clear(ctx, ggez::graphics::BLACK);
 
         let popped = self.scene_stack.pop();
+        self.input_stack.pop();
         self.update_stack.pop();
         self.draw_stack.pop();
 
         if let Some(popped) = popped {
+            if !popped.borrow().should_input_previous() {
+                // Wasn't inputting previous
+                if let Some(last) = self.scene_stack.last() {
+                    if last.borrow().should_input_previous() {
+                        // Requires filled out input_stack
+                        self.input_stack = self.build_input_stack();
+                    } else {
+                        self.input_stack.push(Rc::clone(last));
+                    }
+                }
+            }
+
             if !popped.borrow().should_update_previous() {
                 // Wasn't updating previous
                 if let Some(last) = self.scene_stack.last() {

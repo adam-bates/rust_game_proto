@@ -172,7 +172,7 @@ impl events::EventHandler for GlobalState {
         {
             let mut scene_switch = None;
 
-            for scene in self.scene_manager.update_stack() {
+            for scene in self.scene_manager.input_stack() {
                 scene_switch =
                     scene
                         .borrow_mut()
@@ -202,7 +202,7 @@ impl events::EventHandler for GlobalState {
         {
             let mut scene_switch = None;
 
-            for scene in self.scene_manager.update_stack() {
+            for scene in self.scene_manager.input_stack() {
                 scene_switch =
                     scene
                         .borrow_mut()
@@ -233,7 +233,7 @@ impl events::EventHandler for GlobalState {
         {
             let mut scene_switch = None;
 
-            for scene in self.scene_manager.update_stack() {
+            for scene in self.scene_manager.input_stack() {
                 scene_switch =
                     scene
                         .borrow_mut()
@@ -264,7 +264,7 @@ impl events::EventHandler for GlobalState {
         {
             let mut scene_switch = None;
 
-            for scene in self.scene_manager.update_stack() {
+            for scene in self.scene_manager.input_stack() {
                 scene_switch =
                     scene
                         .borrow_mut()
@@ -328,7 +328,7 @@ impl events::EventHandler for GlobalState {
 
         let mut scene_switch = None;
 
-        for scene in self.scene_manager.update_stack() {
+        for scene in self.scene_manager.input_stack() {
             scene_switch =
                 scene
                     .borrow_mut()

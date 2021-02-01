@@ -123,6 +123,10 @@ impl Scene for PalletTownOverworldScene {
         Ok(None)
     }
 
+    fn should_input_previous(&self) -> bool {
+        true
+    }
+
     fn should_update_previous(&self) -> bool {
         true
     }

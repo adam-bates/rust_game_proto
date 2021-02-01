@@ -36,8 +36,8 @@ impl Scene for InGameScene {
 
     fn on_create(
         &mut self,
-        game_state: &mut GameState,
-        ctx: &mut ggez::Context,
+        _game_state: &mut GameState,
+        _ctx: &mut ggez::Context,
     ) -> GameResult<Option<SceneSwitch>> {
         let scene_builder: SceneBuilder = Box::new(|game_state, ctx| {
             let scene = OverworldScene::new(game_state, ctx)?;
