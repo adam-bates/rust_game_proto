@@ -18,4 +18,4 @@ pub use sprite_sheet::{SpriteRow, SpriteSheet};
 pub use target_position::TargetPosition;
 pub use timer::Timer;
 
-use super::super::input;
+use super::super::{input, scenes};

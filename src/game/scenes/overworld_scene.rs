@@ -2,8 +2,8 @@ use super::{
     config,
     ecs::{
         components::{
-            CurrentPosition, Drawable, FacingDirection, Player, SpriteRow, SpriteSheet,
-            TargetPosition, Timer,
+            CurrentPosition, Drawable, FacingDirection, Interactable, Player, SpriteRow,
+            SpriteSheet, TargetPosition, Timer,
         },
         resources::{Camera, PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
         systems::{
@@ -17,7 +17,7 @@ use super::{
     game_state::GameState,
     input::types::{GameButton, GameDirection, GameInput},
     types::{Scene, SceneBuilder, SceneSwitch},
-    PalletTownOverworldScene, PauseMenuScene, TextBoxScene,
+    PalletTownOverworldScene, PauseMenuScene,
 };
 use ggez::graphics::Drawable as GgezDrawable;
 use specs::{Builder, Join, WorldExt};
@@ -47,6 +47,7 @@ impl OverworldScene {
         game_state.world.register::<Drawable>();
         game_state.world.register::<FacingDirection>();
         game_state.world.register::<SpriteSheet>();
+        game_state.world.register::<Interactable>();
         game_state.world.insert(PlayerMovementRequest::default());
         game_state.world.insert(Camera {
             x: player_target_position.x as f32,
@@ -319,25 +320,38 @@ impl Scene for OverworldScene {
                                             let y =
                                                 (target_position.y as isize + dy).max(0) as usize;
 
-                                            if let Some(target_entity) = tile_map.tiles[y][x].entity
+                                            if let Some(target_entity) =
+                                                tile_map.get_tile(x, y).entity
                                             {
-                                                println!(
-                                                    "Interact with entity: {:?}",
-                                                    target_entity
-                                                );
-
                                                 // TODO: if entity has a spritesheet and/or a facing direction, then turn entity to face player
 
                                                 // TODO: get interactable component from entity which can define how they should interact
 
-                                                let scene_builder: SceneBuilder =
-                                                    Box::new(|_, _| {
-                                                        let scene =
-                                                            TextBoxScene::new("HELLO WORLD :D");
-                                                        Ok(Rc::new(RefCell::new(scene)))
-                                                    });
+                                                if let Some(interactable) = game_state
+                                                    .world
+                                                    .read_component::<Interactable>()
+                                                    .get(target_entity)
+                                                {
+                                                    let player_entity = tile_map
+                                                        .get_tile(
+                                                            target_position.x,
+                                                            target_position.y,
+                                                        )
+                                                        .entity
+                                                        .expect(
+                                                            "Player is not in target position?",
+                                                        );
 
-                                                return Ok(Some(SceneSwitch::Push(scene_builder)));
+                                                    let handler = &interactable.handler;
+
+                                                    if let Some(scene_builder) =
+                                                        handler(player_entity, target_entity)
+                                                    {
+                                                        return Ok(Some(SceneSwitch::Push(
+                                                            scene_builder,
+                                                        )));
+                                                    }
+                                                }
                                             }
                                         }
                                     }

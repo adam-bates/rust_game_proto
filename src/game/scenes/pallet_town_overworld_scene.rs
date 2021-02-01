@@ -1,17 +1,20 @@
 use super::{
     config,
     ecs::{
-        components::{CurrentPosition, Drawable, FacingDirection, SpriteRow, SpriteSheet},
+        components::{
+            CurrentPosition, Drawable, FacingDirection, Interactable, SpriteRow, SpriteSheet,
+        },
         resources::{CameraBounds, TileMap},
     },
     error::types::GameResult,
     game_state::GameState,
     input::types::{GameDirection, GameInput},
     maps::{find_and_move_player, TileMapDefinition},
-    types::{Scene, SceneSwitch},
+    types::{Scene, SceneBuilder, SceneSwitch},
+    TextBoxScene,
 };
 use specs::{Builder, WorldExt};
-use std::{collections::HashMap, sync::Arc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 
 const TILE_MAP_DEFINITION_FILE: &str = "/bin/maps/pallet_town.bin";
 
@@ -22,6 +25,16 @@ impl PalletTownOverworldScene {
         // TODO: Take in player save information to derive player location, and any npc locations if already encountered
 
         let tile_map_definition = TileMapDefinition::load_from_file(ctx, TILE_MAP_DEFINITION_FILE)?;
+
+        let tile_map_width = tile_map_definition.width;
+        let tile_map_height = tile_map_definition.height;
+
+        game_state.world.insert(CameraBounds {
+            min_x: 0.,
+            min_y: 0.,
+            max_x: tile_map_width as f32 - config::VIEWPORT_TILES_WIDTH_F32,
+            max_y: tile_map_height as f32 - config::VIEWPORT_TILES_HEIGHT_F32,
+        });
 
         let mut entities = HashMap::new();
 
@@ -64,18 +77,67 @@ impl PalletTownOverworldScene {
             .with(FacingDirection {
                 direction: GameDirection::Down,
             })
+            .with(Interactable {
+                handler: Box::new(|player_entity, target_entity| {
+                    let scene_builder: SceneBuilder = Box::new(move |game_state, _| {
+                        let scene = TextBoxScene::new(
+                            game_state,
+                            player_entity,
+                            target_entity,
+                            &format!("{:?} says hello to: {:?}", target_entity, player_entity),
+                        );
+                        Ok(Rc::new(RefCell::new(scene)))
+                    });
+
+                    Some(scene_builder)
+                }),
+            })
             .build();
         entities.insert(npc_position, npc_entity);
 
-        let tile_map_width = tile_map_definition.width;
-        let tile_map_height = tile_map_definition.height;
+        let sign_1_position = (8, 6);
+        let sign_1_entity = game_state
+            .world
+            .create_entity()
+            .with(Interactable {
+                handler: Box::new(|player_entity, target_entity| {
+                    let scene_builder: SceneBuilder = Box::new(move |game_state, _| {
+                        let scene = TextBoxScene::new(
+                            game_state,
+                            player_entity,
+                            target_entity,
+                            "And the sign says: Long haired freaky people need not apply.",
+                        );
+                        Ok(Rc::new(RefCell::new(scene)))
+                    });
 
-        game_state.world.insert(CameraBounds {
-            min_x: 0.,
-            min_y: 0.,
-            max_x: tile_map_width as f32 - config::VIEWPORT_TILES_WIDTH_F32,
-            max_y: tile_map_height as f32 - config::VIEWPORT_TILES_HEIGHT_F32,
-        });
+                    Some(scene_builder)
+                }),
+            })
+            .build();
+        entities.insert(sign_1_position, sign_1_entity);
+
+        let sign_2_position = (13, 14);
+        let sign_2_entity = game_state
+            .world
+            .create_entity()
+            .with(Interactable {
+                handler: Box::new(|player_entity, target_entity| {
+                    let scene_builder: SceneBuilder = Box::new(move |game_state, _| {
+                        let scene = TextBoxScene::new(
+                            game_state,
+                            player_entity,
+                            target_entity,
+                            "Into the woods!",
+                        );
+                        Ok(Rc::new(RefCell::new(scene)))
+                    });
+
+                    Some(scene_builder)
+                }),
+            })
+            .build();
+        entities.insert(sign_2_position, sign_2_entity);
 
         let tile_map = tile_map_definition.to_tile_map(ctx, &mut entities)?;
 
