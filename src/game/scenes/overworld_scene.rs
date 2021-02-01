@@ -248,6 +248,76 @@ impl Scene for OverworldScene {
         if let Some(player_movement_request) = game_state.world.get_mut::<PlayerMovementRequest>() {
             match input {
                 GameInput::Button { button, pressed } => match button {
+                    GameButton::Primary => {
+                        if pressed {
+                            if let Some(tile_map) = game_state.world.try_fetch::<TileMap>() {
+                                let (player_c, facing_direction_c, mut target_position_c): (
+                                    specs::ReadStorage<Player>,
+                                    specs::ReadStorage<FacingDirection>,
+                                    specs::WriteStorage<TargetPosition>,
+                                ) = game_state.world.system_data();
+
+                                for (_, facing_direction, target_position) in
+                                    (&player_c, &facing_direction_c, &mut target_position_c).join()
+                                {
+                                    // Help linter
+                                    #[cfg(debug_assertions)]
+                                    let facing_direction = facing_direction as &FacingDirection;
+                                    #[cfg(debug_assertions)]
+                                    let target_position = target_position as &mut TargetPosition;
+
+                                    if !target_position.is_moving {
+                                        let height = tile_map.tiles.len();
+                                        let width = tile_map.tiles[0].len();
+
+                                        if let Some((dx, dy)) = match facing_direction.direction {
+                                            GameDirection::Down => {
+                                                if target_position.y < height - 1 {
+                                                    Some((0, 1))
+                                                } else {
+                                                    None
+                                                }
+                                            }
+                                            GameDirection::Right => {
+                                                if target_position.x < width - 1 {
+                                                    Some((1, 0))
+                                                } else {
+                                                    None
+                                                }
+                                            }
+                                            GameDirection::Up => {
+                                                if target_position.y > 0 {
+                                                    Some((0, -1))
+                                                } else {
+                                                    None
+                                                }
+                                            }
+                                            GameDirection::Left => {
+                                                if target_position.x > 0 {
+                                                    Some((-1, 0))
+                                                } else {
+                                                    None
+                                                }
+                                            }
+                                        } {
+                                            let x =
+                                                (target_position.x as isize + dx).max(0) as usize;
+                                            let y =
+                                                (target_position.y as isize + dy).max(0) as usize;
+
+                                            if let Some(target_entity) = tile_map.tiles[y][x].entity
+                                            {
+                                                println!(
+                                                    "Interact with entity: {:?}",
+                                                    target_entity
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     GameButton::Up => {
                         player_movement_request.last_requested_direction = if pressed {
                             Some(GameDirection::Up)
