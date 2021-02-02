@@ -9,6 +9,7 @@ mod game_state;
 mod input;
 mod maps;
 mod render;
+mod save;
 mod scenes;
 mod world;
 
