@@ -15,8 +15,6 @@ use std::{cell::RefCell, rc::Rc};
 
 #[derive(Default)]
 pub struct InputState {
-    // TODO: Do we need both?
-    // Could we do: gamepad_axis_x/y and set it to the configured stick?
     pub gamepad_axis_x: f32,
     pub gamepad_axis_y: f32,
 }
