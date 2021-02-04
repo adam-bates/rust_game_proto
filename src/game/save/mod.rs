@@ -6,18 +6,6 @@ use super::{
 use serde::{Deserialize, Serialize};
 use specs::Join;
 
-// Here's a draft of my thoughts on saving / loading ...
-
-// When saving / loading, we should specify one of a finite number of save slots, which will have specific file names
-
-// SaveData will hold all of the serializable data, and have functions to convert to and from GameState
-
-// SaveData will have:
-// - from_state(GameState) -> Result<Self>
-// - to_state(self) -> Result<GameState>
-// - save(&self, SaveSlot) -> Result
-// - load(SaveSlot) -> Result<Self>
-
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SaveSlot {
     One,
