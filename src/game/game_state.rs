@@ -168,16 +168,22 @@ impl events::EventHandler for GlobalState {
                         .refresh(ctx, &self.game_state.settings.video_settings.aspect_ratio)?;
                 }
                 ggez::event::KeyCode::Key1 => {
-                    save::SaveData::from_game_state(&self.game_state)?
-                        .save(ctx, save::SaveSlot::One)?;
+                    save::save(&mut self.game_state, ctx, save::SaveSlot::One)?;
                 }
                 ggez::event::KeyCode::Key2 => {
-                    save::SaveData::from_game_state(&self.game_state)?
-                        .save(ctx, save::SaveSlot::Two)?;
+                    save::save(&mut self.game_state, ctx, save::SaveSlot::Two)?;
                 }
                 ggez::event::KeyCode::Key3 => {
-                    save::SaveData::from_game_state(&self.game_state)?
-                        .save(ctx, save::SaveSlot::Three)?;
+                    save::save(&mut self.game_state, ctx, save::SaveSlot::Three)?;
+                }
+                ggez::event::KeyCode::Key4 => {
+                    save::load(&mut self.game_state, ctx, save::SaveSlot::One)?;
+                }
+                ggez::event::KeyCode::Key5 => {
+                    save::load(&mut self.game_state, ctx, save::SaveSlot::Two)?;
+                }
+                ggez::event::KeyCode::Key6 => {
+                    save::load(&mut self.game_state, ctx, save::SaveSlot::Three)?;
                 }
                 _ => {}
             }

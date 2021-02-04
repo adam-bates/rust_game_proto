@@ -39,7 +39,7 @@ impl PalletTownOverworldScene {
         let mut entities = HashMap::new();
 
         let player_position = (7, 5);
-        let player_entity = find_and_move_player(game_state, player_position);
+        let player_entity = find_and_move_player(game_state, player_position)?;
         entities.insert(player_position, player_entity);
 
         let npc_position = (5, 5);

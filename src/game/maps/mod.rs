@@ -122,7 +122,10 @@ fn build_animation_from_layer(layer: TileLayer) -> Vec<Frame> {
         .collect()
 }
 
-pub fn find_and_move_player(game_state: &mut GameState, position: (usize, usize)) -> Entity {
+pub fn find_and_move_player(
+    game_state: &mut GameState,
+    position: (usize, usize),
+) -> GameResult<Entity> {
     let (player_c, mut current_position_c, mut target_position_c): (
         specs::ReadStorage<Player>,
         specs::WriteStorage<CurrentPosition>,
@@ -133,7 +136,8 @@ pub fn find_and_move_player(game_state: &mut GameState, position: (usize, usize)
     for entity in player_c.fetched_entities().join() {
         player_entity = Some(entity);
     }
-    let player_entity = player_entity.expect("No player entity in world");
+    let player_entity = player_entity
+        .ok_or_else(|| ggez::GameError::CustomError("No player entity in world".to_string()))?;
 
     for (_, current_position, target_position) in
         (&player_c, &mut current_position_c, &mut target_position_c).join()
@@ -152,7 +156,7 @@ pub fn find_and_move_player(game_state: &mut GameState, position: (usize, usize)
         target_position.y = position.1;
     }
 
-    player_entity
+    Ok(player_entity)
 }
 
 impl TileMapDefinition {
