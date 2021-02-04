@@ -12,6 +12,15 @@ pub struct RenderState {
     pub window_color_format: ggez::graphics::Format,
 }
 
+impl std::fmt::Debug for RenderState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!(
+            "RenderState {{ render_target: {}, screen_coords: {:?}, window_coords: {:?}, window_color_format: {:?} }}",
+            self.render_target.name(), self.screen_coords, self.window_coords, self.window_color_format
+        ))
+    }
+}
+
 impl RenderState {
     pub fn new(ctx: &mut ggez::Context, settings: &Settings) -> GameResult<Self> {
         ggez::graphics::set_default_filter(ctx, ggez::graphics::FilterMode::Nearest);

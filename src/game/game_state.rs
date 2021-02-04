@@ -3,6 +3,7 @@ use super::{
     events,
     input::types::GameInput,
     render::state::RenderState,
+    save,
     scenes::{
         types::{SceneBuilder, SceneManager, SceneSwitch},
         MainMenuScene,
@@ -166,7 +167,18 @@ impl events::EventHandler for GlobalState {
                         .render_state
                         .refresh(ctx, &self.game_state.settings.video_settings.aspect_ratio)?;
                 }
-                // ggez::event::KeyCode::S => self.settings.save(),
+                ggez::event::KeyCode::Key1 => {
+                    save::SaveData::from_game_state(&self.game_state)?
+                        .save(ctx, save::SaveSlot::One)?;
+                }
+                ggez::event::KeyCode::Key2 => {
+                    save::SaveData::from_game_state(&self.game_state)?
+                        .save(ctx, save::SaveSlot::Two)?;
+                }
+                ggez::event::KeyCode::Key3 => {
+                    save::SaveData::from_game_state(&self.game_state)?
+                        .save(ctx, save::SaveSlot::Three)?;
+                }
                 _ => {}
             }
         } else if let Some(game_input) =

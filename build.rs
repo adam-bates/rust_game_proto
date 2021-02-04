@@ -387,7 +387,7 @@ fn serialize_file(binary_assets_path: &PathBuf, file: fs::DirEntry) -> Result<()
         overlay,
     };
 
-    let tile_map_bin_path = binary_assets_path.join(PathBuf::from(format!("{}.bin", filename)));
+    let tile_map_bin_path = binary_assets_path.join(PathBuf::from(format!("{}", filename)));
 
     bincode::serialize_into(fs::File::create(tile_map_bin_path)?, &tile_map)?;
 

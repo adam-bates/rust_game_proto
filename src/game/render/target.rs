@@ -7,6 +7,7 @@ use ggez::{
 pub trait RenderTarget {
     fn draw(&self, state: &GlobalState, ctx: &mut Context) -> GameResult;
     fn is_window(&self) -> bool;
+    fn name(&self) -> &str;
 }
 
 pub struct WindowRenderTarget;
@@ -17,6 +18,10 @@ impl RenderTarget for WindowRenderTarget {
 
     fn is_window(&self) -> bool {
         true
+    }
+
+    fn name(&self) -> &str {
+        "WindowRenderTarget"
     }
 }
 
@@ -49,5 +54,9 @@ impl RenderTarget for CanvasRenderTarget {
 
     fn is_window(&self) -> bool {
         false
+    }
+
+    fn name(&self) -> &str {
+        "CanvasRenderTarget"
     }
 }

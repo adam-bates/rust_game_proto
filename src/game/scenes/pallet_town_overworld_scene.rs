@@ -16,7 +16,7 @@ use super::{
 use specs::{Builder, WorldExt};
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 
-const TILE_MAP_DEFINITION_FILE: &str = "/bin/maps/pallet_town.bin";
+const TILE_MAP_DEFINITION_FILE: &str = "/bin/maps/pallet_town";
 
 pub struct PalletTownOverworldScene;
 
