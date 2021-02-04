@@ -1,12 +1,10 @@
 use super::{
     ecs::components::{Player, TargetPosition},
     error::types::GameResult,
-    filesystem,
     game_state::GameState,
 };
 use serde::{Deserialize, Serialize};
-use specs::{Join, WorldExt};
-use std::io::Read;
+use specs::Join;
 
 // Here's a draft of my thoughts on saving / loading ...
 
@@ -46,7 +44,7 @@ impl SaveSlot {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct SaveData {
     player_position_x: usize,
     player_position_y: usize,
@@ -96,6 +94,7 @@ impl SaveData {
         let backup_filename = &format!("{}.backup.sav", slot.id());
 
         let save_file_path = saves_path.join(save_filename);
+        let backup_file_path = saves_path.join(backup_filename);
 
         if vfs.exists(&save_file_path) {
             let save_file = vfs.open(&save_file_path)?;
@@ -108,9 +107,6 @@ impl SaveData {
             };
 
             if let Some(old_save_data) = old_save_data {
-                println!("Found old save data: {:#?}", old_save_data);
-
-                let backup_file_path = saves_path.join(backup_filename);
                 let backup_file = vfs.create(&backup_file_path)?;
                 if let Err(e) = bincode::serialize_into(backup_file, &old_save_data) {
                     println!("Error serializing old save data into backup file: {}", e);
@@ -125,6 +121,26 @@ impl SaveData {
                 self, e
             ))
         })?;
+
+        let save_file = vfs.open(&save_file_path)?;
+        let save_data: Self = bincode::deserialize_from(save_file).map_err(|e| {
+            ggez::GameError::CustomError(format!(
+                "Failed to read save data: {:?}\n{}",
+                save_file_path, e
+            ))
+        })?;
+
+        if save_data != *self {
+            return Err(ggez::GameError::CustomError(format!(
+                "Error saving data, save file doesn't match save data. Save data: {:?}",
+                save_data
+            )));
+        }
+
+        // Delete backup save now that main save is confirmed valid
+        if vfs.exists(&backup_file_path) {
+            vfs.rm(&backup_file_path)?;
+        }
 
         Ok(())
     }
