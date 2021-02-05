@@ -2,7 +2,8 @@ use super::{
     ecs::resources::DeltaTime,
     error::types::GameResult,
     game_state::GameState,
-    input::types::GameInput,
+    input::types::{GameButton, GameInput},
+    save::{self, SaveSlot},
     types::{Scene, SceneBuilder, SceneSwitch},
     OverworldScene,
 };
@@ -11,10 +12,15 @@ use std::{cell::RefCell, rc::Rc};
 pub struct InGameScene;
 
 impl InGameScene {
-    pub fn new(game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult<Self> {
+    pub fn new(
+        game_state: &mut GameState,
+        ctx: &mut ggez::Context,
+        save_slot: SaveSlot,
+    ) -> GameResult<Self> {
         // TODO: Build from loaded save file
 
         game_state.world.insert(DeltaTime::default());
+        game_state.world.insert(save_slot);
 
         Ok(Self)
     }
@@ -31,6 +37,7 @@ impl std::fmt::Debug for InGameScene {
 impl Scene for InGameScene {
     fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<DeltaTime>();
+        game_state.world.remove::<SaveSlot>();
         Ok(())
     }
 
@@ -68,10 +75,31 @@ impl Scene for InGameScene {
 
     fn input(
         &mut self,
-        _game_state: &mut GameState,
-        _ctx: &mut ggez::Context,
-        _input: GameInput,
+        game_state: &mut GameState,
+        ctx: &mut ggez::Context,
+        input: GameInput,
     ) -> GameResult<Option<SceneSwitch>> {
+        match input {
+            GameInput::Button { button, pressed } => {
+                if pressed {
+                    match button {
+                        GameButton::Select => {
+                            let save_slot = *game_state.world.fetch::<SaveSlot>();
+                            save::save(game_state, ctx, save_slot)?;
+                            println!("Saved to slot: {}", save_slot.id());
+                        }
+                        GameButton::Secondary => {
+                            let save_slot = *game_state.world.fetch::<SaveSlot>();
+                            println!("Loading slot: {}", save_slot.id());
+                            save::load(game_state, ctx, save_slot)?;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+
         Ok(None)
     }
 

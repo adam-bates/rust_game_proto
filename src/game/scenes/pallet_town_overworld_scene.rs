@@ -10,6 +10,7 @@ use super::{
     game_state::GameState,
     input::types::{GameDirection, GameInput},
     maps::{find_and_move_player, TileMapDefinition},
+    save::{self, SaveSlot},
     types::{Scene, SceneBuilder, SceneSwitch},
     TextBoxScene,
 };
@@ -154,6 +155,18 @@ impl std::fmt::Debug for PalletTownOverworldScene {
 }
 
 impl Scene for PalletTownOverworldScene {
+    fn on_create(
+        &mut self,
+        game_state: &mut GameState,
+        ctx: &mut ggez::Context,
+    ) -> GameResult<Option<SceneSwitch>> {
+        let save_slot = *game_state.world.fetch::<SaveSlot>();
+        println!("Loading slot: {}", save_slot.id());
+        save::load(game_state, ctx, save_slot)?;
+
+        Ok(None)
+    }
+
     fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<CameraBounds>();
         game_state.world.remove::<TileMap>();

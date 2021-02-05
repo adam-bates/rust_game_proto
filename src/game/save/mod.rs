@@ -108,7 +108,7 @@ pub fn load(game_state: &mut GameState, ctx: &mut ggez::Context, slot: SaveSlot)
     save_data.to_game_state(game_state)
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum SaveSlot {
     One,
     Two,
@@ -116,7 +116,7 @@ pub enum SaveSlot {
 }
 
 impl SaveSlot {
-    fn id(&self) -> usize {
+    pub fn id(&self) -> usize {
         match self {
             Self::One => 1,
             Self::Two => 2,
@@ -124,7 +124,7 @@ impl SaveSlot {
         }
     }
 
-    fn from_id(id: usize) -> Option<Self> {
+    pub fn from_id(id: usize) -> Option<Self> {
         match id {
             1 => Some(Self::One),
             2 => Some(Self::Two),
