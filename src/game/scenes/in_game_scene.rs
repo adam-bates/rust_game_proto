@@ -14,18 +14,14 @@ pub struct InGameScene;
 impl InGameScene {
     pub fn new(
         game_state: &mut GameState,
-        ctx: &mut ggez::Context,
+        _ctx: &mut ggez::Context,
         save_slot: SaveSlot,
     ) -> GameResult<Self> {
-        // TODO: Build from loaded save file
-
         game_state.world.insert(DeltaTime::default());
         game_state.world.insert(save_slot);
 
         Ok(Self)
     }
-
-    // TODO: Function to build from save file given a filesystem
 }
 
 impl std::fmt::Debug for InGameScene {

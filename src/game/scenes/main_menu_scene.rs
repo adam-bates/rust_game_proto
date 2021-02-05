@@ -12,7 +12,7 @@ use ggez::graphics::Drawable as GgezDrawable;
 use std::{cell::RefCell, rc::Rc};
 
 pub struct MainMenuScene {
-    save_slot: usize,
+    selected_save_slot: usize,
     background_color: ggez::graphics::Color,
     text: ggez::graphics::Text,
     text_param: ggez::graphics::DrawParam,
@@ -42,7 +42,7 @@ impl MainMenuScene {
             (text_scale * config::VIEWPORT_PIXELS_HEIGHT_F32 - text.height(ctx) as f32) / 2.;
 
         Ok(Self {
-            save_slot: 1,
+            selected_save_slot: 1,
             background_color: ggez::graphics::Color::from_rgb(112, 200, 160),
             text,
             text_param: ggez::graphics::DrawParam::default()
@@ -93,7 +93,7 @@ impl Scene for MainMenuScene {
                 if pressed {
                     match button {
                         GameButton::Primary | GameButton::Start => {
-                            match SaveSlot::from_id(self.save_slot) {
+                            match SaveSlot::from_id(self.selected_save_slot) {
                                 Some(save_slot) => {
                                     println!("Starting save slot: {}", save_slot.id());
                                     let scene_builder: SceneBuilder =
@@ -106,16 +106,16 @@ impl Scene for MainMenuScene {
 
                                     return Ok(Some(SceneSwitch::ReplaceAll(scene_builder)));
                                 }
-                                _ => println!("Invalid save slot: {}", self.save_slot),
+                                _ => println!("Invalid save slot: {}", self.selected_save_slot),
                             }
                         }
                         GameButton::Right => {
-                            self.save_slot += 1;
-                            println!("Save slot: {}", self.save_slot);
+                            self.selected_save_slot += 1;
+                            println!("Save slot: {}", self.selected_save_slot);
                         }
                         GameButton::Left => {
-                            self.save_slot = (self.save_slot as isize - 1).max(1) as usize;
-                            println!("Save slot: {}", self.save_slot);
+                            self.selected_save_slot = (self.selected_save_slot as isize - 1).max(1) as usize;
+                            println!("Save slot: {}", self.selected_save_slot);
                         }
                         _ => {}
                     }
