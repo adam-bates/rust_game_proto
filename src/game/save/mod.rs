@@ -19,6 +19,8 @@ const BACKUP_FILE_EXT: &str = "backup.sav";
 // Can we save/load dynamic structures? Maybe a hashmap? (more prone to error, technically slower but not noticeable)
 // Or we could just hard-code everything we need ... Just might not be as flexible
 
+// TODO: Look into specs' save/load (WorldSerialize)
+
 fn get_user_data_vfs(ctx: &mut ggez::Context) -> GameResult<&Box<dyn ggez::vfs::VFS>> {
     ctx.filesystem
         .find_vfs(&ctx.filesystem.user_data_path)
