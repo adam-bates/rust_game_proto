@@ -1,7 +1,7 @@
 use super::{
     config,
     ecs::{
-        components::{CurrentPosition, Player, TargetPosition},
+        components::{CurrentPosition, MapName, Player, TargetPosition},
         resources::{Frame, Tile, TileMap},
     },
     error::types::GameResult,
@@ -210,6 +210,7 @@ impl TileMapDefinition {
             overlay_height,
             spritesheet_param: ggez::graphics::DrawParam::default(),
             to_draw: vec![],
+            current_map: MapName::pallet_town(),
         })
     }
 

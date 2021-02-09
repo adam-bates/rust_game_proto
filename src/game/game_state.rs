@@ -3,6 +3,7 @@ use super::{
     events,
     input::types::GameInput,
     render::state::RenderState,
+    save::MetaSaveData,
     scenes::{
         types::{SceneBuilder, SceneManager, SceneSwitch},
         MainMenuScene,

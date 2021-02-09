@@ -3,7 +3,7 @@ use super::{
     error::types::GameResult,
     game_state::GameState,
     input::types::{GameButton, GameInput},
-    save::SaveSlot,
+    save::{self, MetaSaveData, SaveSlot},
     settings,
     types::{Scene, SceneBuilder, SceneSwitch},
     InGameScene,
@@ -12,10 +12,11 @@ use ggez::graphics::Drawable as GgezDrawable;
 use std::{cell::RefCell, rc::Rc};
 
 pub struct MainMenuScene {
-    selected_save_slot: usize,
     background_color: ggez::graphics::Color,
     text: ggez::graphics::Text,
     text_param: ggez::graphics::DrawParam,
+    saves: Vec<Option<MetaSaveData>>,
+    selected_save: Option<usize>,
 }
 
 impl MainMenuScene {
@@ -41,13 +42,19 @@ impl MainMenuScene {
         let text_pos_y =
             (text_scale * config::VIEWPORT_PIXELS_HEIGHT_F32 - text.height(ctx) as f32) / 2.;
 
+        let mut saves = vec![];
+        for save_slot in SaveSlot::all() {
+            saves.push(save::load_meta(ctx, save_slot)?);
+        }
+
         Ok(Self {
-            selected_save_slot: 1,
             background_color: ggez::graphics::Color::from_rgb(112, 200, 160),
             text,
             text_param: ggez::graphics::DrawParam::default()
                 .dest([text_pos_x / text_scale, text_pos_y / text_scale])
                 .scale([1. / text_scale, 1. / text_scale]),
+            selected_save: None,
+            saves,
         })
     }
 }
@@ -93,29 +100,77 @@ impl Scene for MainMenuScene {
                 if pressed {
                     match button {
                         GameButton::Primary | GameButton::Start => {
-                            match SaveSlot::from_id(self.selected_save_slot) {
-                                Some(save_slot) => {
-                                    println!("Starting save slot: {}", save_slot.id());
-                                    let scene_builder: SceneBuilder =
-                                        Box::new(move |game_state, ctx| {
-                                            let scene =
-                                                InGameScene::new(game_state, ctx, save_slot)?;
+                            if let Some(selected_save) = self.selected_save {
+                                match SaveSlot::from_id(selected_save) {
+                                    Some(save_slot) => {
+                                        let opt_meta_data_save = self.saves[selected_save].clone();
 
-                                            Ok(Rc::new(RefCell::new(scene)))
-                                        });
+                                        println!("Starting save slot: {}", save_slot.id());
+                                        let scene_builder: SceneBuilder = Box::new(
+                                            move |game_state, ctx| {
+                                                let meta_data = match &opt_meta_data_save {
+                                                    Some(meta_data) => meta_data.clone(),
+                                                    None => {
+                                                        save::new_save(
+                                                            ctx,
+                                                            save_slot,
+                                                            "Adam".to_string(),
+                                                        )?;
+                                                        save::load_meta(ctx, save_slot)?.expect(
+                                                            &format!("Couldn't load meta save data after creating new save: {:?}", save_slot)
+                                                        )
+                                                    }
+                                                };
 
-                                    return Ok(Some(SceneSwitch::ReplaceAll(scene_builder)));
+                                                let scene = InGameScene::new(
+                                                    game_state, ctx, save_slot, meta_data,
+                                                )?;
+
+                                                Ok(Rc::new(RefCell::new(scene)))
+                                            },
+                                        );
+
+                                        return Ok(Some(SceneSwitch::ReplaceAll(scene_builder)));
+                                    }
+                                    _ => println!("Invalid save slot: {}", selected_save),
                                 }
-                                _ => println!("Invalid save slot: {}", self.selected_save_slot),
+                            }
+                        }
+                        GameButton::Up => {
+                            self.selected_save = Some(0);
+                            println!("Save slot: {:?}", self.selected_save);
+                            if let Some(selected_save) = self.selected_save {
+                                println!("Save: {:?}", self.saves[selected_save]);
+                            }
+                        }
+                        GameButton::Down => {
+                            self.selected_save = None;
+                            println!("Save slot: {:?}", self.selected_save);
+                            if let Some(selected_save) = self.selected_save {
+                                println!("Save: {:?}", self.saves[selected_save]);
                             }
                         }
                         GameButton::Right => {
-                            self.selected_save_slot += 1;
-                            println!("Save slot: {}", self.selected_save_slot);
+                            if let Some(selected_save) = &mut self.selected_save {
+                                *selected_save = (*selected_save + 1) % self.saves.len();
+                            }
+                            println!("Save slot: {:?}", self.selected_save);
+                            if let Some(selected_save) = self.selected_save {
+                                println!("Save: {:?}", self.saves[selected_save]);
+                            }
                         }
                         GameButton::Left => {
-                            self.selected_save_slot = (self.selected_save_slot as isize - 1).max(1) as usize;
-                            println!("Save slot: {}", self.selected_save_slot);
+                            if let Some(selected_save) = &mut self.selected_save {
+                                if *selected_save == 0 {
+                                    *selected_save = self.saves.len() - 1;
+                                } else {
+                                    *selected_save -= 1;
+                                }
+                            }
+                            println!("Save slot: {:?}", self.selected_save);
+                            if let Some(selected_save) = self.selected_save {
+                                println!("Save: {:?}", self.saves[selected_save]);
+                            }
                         }
                         _ => {}
                     }

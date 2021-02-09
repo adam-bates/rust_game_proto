@@ -2,7 +2,7 @@ use super::{
     config,
     ecs::{
         components::{
-            CurrentPosition, Drawable, FacingDirection, Interactable, SpriteRow, SpriteSheet,
+            CurrentPosition, Drawable, FacingDirection, Id, Interactable, SpriteRow, SpriteSheet,
         },
         resources::{CameraBounds, TileMap},
     },
@@ -14,12 +14,14 @@ use super::{
     types::{Scene, SceneBuilder, SceneSwitch},
     TextBoxScene,
 };
-use specs::{Builder, WorldExt};
+use specs::{Builder, Entity, WorldExt};
 use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 
 const TILE_MAP_DEFINITION_FILE: &str = "/bin/maps/pallet_town";
 
-pub struct PalletTownOverworldScene;
+pub struct PalletTownOverworldScene {
+    entities: Vec<Entity>,
+}
 
 impl PalletTownOverworldScene {
     pub fn new(game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
@@ -47,6 +49,7 @@ impl PalletTownOverworldScene {
         let npc_entity = game_state
             .world
             .create_entity()
+            .with(Id::new("WiseOldMan"))
             .with(Drawable {
                 drawable: Arc::new(ggez::graphics::Mesh::new_rectangle(
                     ctx,
@@ -100,6 +103,7 @@ impl PalletTownOverworldScene {
         let sign_1_entity = game_state
             .world
             .create_entity()
+            .with(Id::new("Sign1"))
             .with(Interactable {
                 handler: Box::new(|player_entity, target_entity| {
                     let scene_builder: SceneBuilder = Box::new(move |game_state, _| {
@@ -122,6 +126,7 @@ impl PalletTownOverworldScene {
         let sign_2_entity = game_state
             .world
             .create_entity()
+            .with(Id::new("Sign2"))
             .with(Interactable {
                 handler: Box::new(|player_entity, target_entity| {
                     let scene_builder: SceneBuilder = Box::new(move |game_state, _| {
@@ -144,7 +149,9 @@ impl PalletTownOverworldScene {
 
         game_state.world.insert(tile_map);
 
-        Ok(Self)
+        Ok(Self {
+            entities: vec![npc_entity, sign_1_entity, sign_2_entity],
+        })
     }
 }
 
@@ -170,6 +177,13 @@ impl Scene for PalletTownOverworldScene {
     fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<CameraBounds>();
         game_state.world.remove::<TileMap>();
+
+        if let Err(e) = game_state.world.delete_entities(self.entities.as_slice()) {
+            return Err(ggez::GameError::CustomError(format!(
+                "Wrong generation error when deleting entities in OverworldScene::dispose: {}",
+                e
+            )));
+        }
 
         Ok(())
     }

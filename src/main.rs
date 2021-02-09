@@ -1,8 +1,9 @@
+mod utils;
+
 mod config;
 mod error;
 mod filesystem;
 mod game;
-mod utils;
 
 use error::types::Result;
 

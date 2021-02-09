@@ -8,7 +8,7 @@ const NEG_PI_BY_4: f32 = -1. * std::f32::consts::FRAC_PI_4;
 const POS_PI_BY_4: f32 = std::f32::consts::FRAC_PI_4;
 const POS_3_PI_BY_4: f32 = 3. * std::f32::consts::FRAC_PI_4;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum GameDirection {
     Up,
     Down,

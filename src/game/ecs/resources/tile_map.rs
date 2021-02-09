@@ -1,4 +1,7 @@
-use super::{components::Drawable, maps::TileType};
+use super::{
+    components::{Drawable, MapName},
+    maps::TileType,
+};
 
 #[derive(Default, Debug)]
 pub struct Tile {
@@ -25,6 +28,7 @@ pub struct TileMap {
     pub overlay_height: usize,
     pub spritesheet_param: ggez::graphics::DrawParam,
     pub to_draw: Vec<Drawable>,
+    pub current_map: MapName,
 }
 
 impl TileMap {

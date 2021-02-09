@@ -1,17 +1,23 @@
+mod types;
+
+pub use types::{
+    EntityDefinition, MetaSaveData, PlayerDefinition, Position, QuestDefinition, SaveData,
+    TaskStatus, WorldDefinition,
+};
+
 use super::{
-    ecs::{
-        components::{CurrentPosition, Player, TargetPosition},
-        resources::TileMap,
-    },
+    ecs::{self, components::MapName},
     error::types::GameResult,
     game_state::GameState,
+    input::{self, types::GameDirection},
+    utils::{self, time},
 };
 use serde::{Deserialize, Serialize};
-use specs::Join;
 
 const SAVE_FILE_DIR: &str = "/saves";
 const SAVE_FILE_EXT: &str = "sav";
 const BACKUP_FILE_EXT: &str = "backup.sav";
+const META_FILE_EXT: &str = "meta";
 
 // TODO: Look into making save/load modular.
 // Entities should "save themselves" (Maybe a saveable component? That has a save_handler and load_handler functions? With factory functions for easy creation?)
@@ -19,15 +25,18 @@ const BACKUP_FILE_EXT: &str = "backup.sav";
 // Can we save/load dynamic structures? Maybe a hashmap? (more prone to error, technically slower but not noticeable)
 // Or we could just hard-code everything we need ... Just might not be as flexible
 
-// TODO: Look into specs' save/load (WorldSerialize)
-
 fn get_user_data_vfs(ctx: &mut ggez::Context) -> GameResult<&Box<dyn ggez::vfs::VFS>> {
     ctx.filesystem
         .find_vfs(&ctx.filesystem.user_data_path)
         .ok_or_else(|| ggez::GameError::FilesystemError("Couldn't find user data vfs".to_string()))
 }
 
-pub fn save(game_state: &mut GameState, ctx: &mut ggez::Context, slot: SaveSlot) -> GameResult {
+fn save_created_data(
+    ctx: &mut ggez::Context,
+    slot: SaveSlot,
+    save_data: SaveData,
+    meta_save_data: MetaSaveData,
+) -> GameResult {
     let vfs = get_user_data_vfs(ctx)?;
 
     let saves_path = std::path::PathBuf::from(SAVE_FILE_DIR);
@@ -37,10 +46,17 @@ pub fn save(game_state: &mut GameState, ctx: &mut ggez::Context, slot: SaveSlot)
     }
 
     let save_filename = &format!("{}.{}", slot.id(), SAVE_FILE_EXT);
-    let backup_filename = &format!("{}.{}", slot.id(), BACKUP_FILE_EXT);
+    let backup_filename = &format!(
+        "{}-{}.{}",
+        slot.id(),
+        time::now_timestamp(),
+        BACKUP_FILE_EXT
+    );
+    let meta_filename = &format!("{}.{}", slot.id(), META_FILE_EXT);
 
     let save_file_path = saves_path.join(save_filename);
     let backup_file_path = saves_path.join(backup_filename);
+    let meta_file_path = saves_path.join(meta_filename);
 
     if vfs.exists(&save_file_path) {
         let save_file = vfs.open(&save_file_path)?;
@@ -61,7 +77,8 @@ pub fn save(game_state: &mut GameState, ctx: &mut ggez::Context, slot: SaveSlot)
     }
 
     let save_file = vfs.create(&save_file_path)?;
-    let save_data = SaveData::from_game_state(game_state)?;
+    let mut meta_file = vfs.create(&meta_file_path)?;
+
     bincode::serialize_into(save_file, &save_data).map_err(|e| {
         ggez::GameError::CustomError(format!(
             "Error serializing save data into save file: {:?}\n{}",
@@ -84,12 +101,33 @@ pub fn save(game_state: &mut GameState, ctx: &mut ggez::Context, slot: SaveSlot)
         )));
     }
 
+    let buffer = toml::to_vec(&meta_save_data)?;
+    meta_file.write_all(&buffer)?;
+
     // Delete backup save now that main save is confirmed valid
     if vfs.exists(&backup_file_path) {
         vfs.rm(&backup_file_path)?;
     }
 
     Ok(())
+}
+
+pub fn new_save(ctx: &mut ggez::Context, slot: SaveSlot, name: String) -> GameResult {
+    let starting_map = MapName::pallet_town();
+    let starting_position = Position { x: 10, y: 10 };
+    let direction = GameDirection::Down;
+
+    let save_data = SaveData::new(starting_map.clone(), starting_position, direction);
+    let meta_data = MetaSaveData::new(name, starting_map.value());
+
+    save_created_data(ctx, slot, save_data, meta_data)
+}
+
+pub fn save(game_state: &mut GameState, ctx: &mut ggez::Context, slot: SaveSlot) -> GameResult {
+    let save_data = SaveData::from_game_state(game_state)?;
+    let meta_data = MetaSaveData::from_game_state(game_state)?;
+
+    save_created_data(ctx, slot, save_data, meta_data)
 }
 
 pub fn load(game_state: &mut GameState, ctx: &mut ggez::Context, slot: SaveSlot) -> GameResult {
@@ -110,6 +148,28 @@ pub fn load(game_state: &mut GameState, ctx: &mut ggez::Context, slot: SaveSlot)
     save_data.to_game_state(game_state)
 }
 
+pub fn load_meta(ctx: &mut ggez::Context, slot: SaveSlot) -> GameResult<Option<MetaSaveData>> {
+    let vfs = get_user_data_vfs(ctx)?;
+
+    let meta_file_path = std::path::PathBuf::from(&format!(
+        "{}/{}.{}",
+        SAVE_FILE_DIR,
+        slot.id(),
+        META_FILE_EXT,
+    ));
+
+    if !vfs.exists(&meta_file_path) {
+        return Ok(None);
+    }
+
+    let mut meta_file = vfs.open(&meta_file_path)?;
+
+    let mut encoded = String::new();
+    meta_file.read_to_string(&mut encoded)?;
+
+    Ok(Some(toml::from_str(&encoded)?))
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum SaveSlot {
     One,
@@ -118,6 +178,18 @@ pub enum SaveSlot {
 }
 
 impl SaveSlot {
+    pub fn all() -> Vec<Self> {
+        vec![Self::One, Self::Two, Self::Three]
+    }
+
+    pub fn from_id(id: usize) -> Option<Self> {
+        match id {
+            0 => Some(Self::One),
+            1 => Some(Self::Two),
+            2 => Some(Self::Three),
+            _ => None,
+        }
+    }
     pub fn id(&self) -> usize {
         match self {
             Self::One => 1,
@@ -125,16 +197,9 @@ impl SaveSlot {
             Self::Three => 3,
         }
     }
-
-    pub fn from_id(id: usize) -> Option<Self> {
-        match id {
-            1 => Some(Self::One),
-            2 => Some(Self::Two),
-            3 => Some(Self::Three),
-            _ => None,
-        }
-    }
 }
+
+/*
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct SaveData {
@@ -212,3 +277,5 @@ impl SaveData {
         Ok(())
     }
 }
+
+*/

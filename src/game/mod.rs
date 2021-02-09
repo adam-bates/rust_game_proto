@@ -13,7 +13,7 @@ mod save;
 mod scenes;
 mod world;
 
-use super::{config, error, filesystem};
+use super::{config, error, filesystem, utils};
 
 pub fn run_game(
     fs: ggez::filesystem::Filesystem,

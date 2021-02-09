@@ -2,7 +2,7 @@ use super::{
     config,
     ecs::{
         components::{
-            CurrentPosition, Drawable, FacingDirection, Interactable, Player, SpriteRow,
+            CurrentPosition, Drawable, FacingDirection, Id, Interactable, Player, SpriteRow,
             SpriteSheet, TargetPosition, Timer,
         },
         resources::{Camera, PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
@@ -40,6 +40,7 @@ impl OverworldScene {
             y: player_target_position.y as f32,
         };
 
+        game_state.world.register::<Id>();
         game_state.world.register::<Player>();
         game_state.world.register::<CurrentPosition>();
         game_state.world.register::<TargetPosition>();
@@ -148,6 +149,7 @@ impl OverworldScene {
         let player_entity = game_state
             .world
             .create_entity()
+            .with(Id::new("Player"))
             .with(Player)
             .with(player_current_position)
             .with(player_target_position)

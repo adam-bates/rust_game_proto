@@ -3,7 +3,7 @@ use super::{
     error::types::GameResult,
     game_state::GameState,
     input::types::{GameButton, GameInput},
-    save::{self, SaveSlot},
+    save::{self, MetaSaveData, SaveSlot},
     types::{Scene, SceneBuilder, SceneSwitch},
     OverworldScene,
 };
@@ -16,9 +16,11 @@ impl InGameScene {
         game_state: &mut GameState,
         _ctx: &mut ggez::Context,
         save_slot: SaveSlot,
+        meta_data: MetaSaveData,
     ) -> GameResult<Self> {
         game_state.world.insert(DeltaTime::default());
         game_state.world.insert(save_slot);
+        game_state.world.insert(meta_data);
 
         Ok(Self)
     }
@@ -34,6 +36,7 @@ impl Scene for InGameScene {
     fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<DeltaTime>();
         game_state.world.remove::<SaveSlot>();
+        game_state.world.remove::<MetaSaveData>();
         Ok(())
     }
 
