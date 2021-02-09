@@ -1,16 +1,12 @@
 use super::{
     config,
-    ecs::{
-        components::{
-            CurrentPosition, Drawable, FacingDirection, Id, Interactable, SpriteRow, SpriteSheet,
-        },
-        resources::{CameraBounds, TileMap},
+    ecs::components::{
+        CurrentPosition, Drawable, FacingDirection, Id, Interactable, SpriteRow, SpriteSheet,
     },
     error::types::GameResult,
     game_state::GameState,
     input::types::{GameDirection, GameInput},
-    maps::{find_and_move_player, TileMapDefinition},
-    save::{self, SaveSlot},
+    maps,
     types::{Scene, SceneBuilder, SceneSwitch},
     TextBoxScene,
 };
@@ -25,24 +21,10 @@ pub struct PalletTownOverworldScene {
 
 impl PalletTownOverworldScene {
     pub fn new(game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
-        // TODO: Take in player save information to derive player location, and any npc locations if already encountered
-
-        let tile_map_definition = TileMapDefinition::load_from_file(ctx, TILE_MAP_DEFINITION_FILE)?;
-
-        let tile_map_width = tile_map_definition.width;
-        let tile_map_height = tile_map_definition.height;
-
-        game_state.world.insert(CameraBounds {
-            min_x: 0.,
-            min_y: 0.,
-            max_x: tile_map_width as f32 - config::VIEWPORT_TILES_WIDTH_F32,
-            max_y: tile_map_height as f32 - config::VIEWPORT_TILES_HEIGHT_F32,
-        });
-
         let mut entities = HashMap::new();
 
         let player_position = (7, 5);
-        let player_entity = find_and_move_player(game_state, player_position)?;
+        let player_entity = maps::find_and_move_player(game_state, player_position)?;
         entities.insert(player_position, player_entity);
 
         let npc_position = (5, 5);
@@ -145,13 +127,11 @@ impl PalletTownOverworldScene {
             .build();
         entities.insert(sign_2_position, sign_2_entity);
 
-        let tile_map = tile_map_definition.to_tile_map(ctx, &mut entities)?;
+        maps::load_map(game_state, ctx, TILE_MAP_DEFINITION_FILE, &mut entities)?;
 
-        game_state.world.insert(tile_map);
+        let entities: Vec<Entity> = entities.values().cloned().collect();
 
-        Ok(Self {
-            entities: vec![npc_entity, sign_1_entity, sign_2_entity],
-        })
+        Ok(Self { entities })
     }
 }
 
@@ -162,30 +142,8 @@ impl std::fmt::Debug for PalletTownOverworldScene {
 }
 
 impl Scene for PalletTownOverworldScene {
-    fn on_create(
-        &mut self,
-        game_state: &mut GameState,
-        ctx: &mut ggez::Context,
-    ) -> GameResult<Option<SceneSwitch>> {
-        let save_slot = *game_state.world.fetch::<SaveSlot>();
-        println!("Loading slot: {}", save_slot.id());
-        save::load(game_state, ctx, save_slot)?;
-
-        Ok(None)
-    }
-
     fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
-        game_state.world.remove::<CameraBounds>();
-        game_state.world.remove::<TileMap>();
-
-        if let Err(e) = game_state.world.delete_entities(self.entities.as_slice()) {
-            return Err(ggez::GameError::CustomError(format!(
-                "Wrong generation error when deleting entities in OverworldScene::dispose: {}",
-                e
-            )));
-        }
-
-        Ok(())
+        maps::dispose_map(game_state, self.entities.as_slice())
     }
 
     #[tracing::instrument]

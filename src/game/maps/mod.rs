@@ -2,14 +2,57 @@ use super::{
     config,
     ecs::{
         components::{CurrentPosition, MapName, Player, TargetPosition},
-        resources::{Frame, Tile, TileMap},
+        resources::{CameraBounds, Frame, Tile, TileMap},
     },
     error::types::GameResult,
     game_state::GameState,
+    save::{self, SaveSlot},
 };
 use serde::{Deserialize, Serialize};
-use specs::{Entity, Join};
+use specs::{Entity, Join, WorldExt};
 use std::collections::HashMap;
+
+pub fn load_map(
+    game_state: &mut GameState,
+    ctx: &mut ggez::Context,
+    map_file_path: &str,
+    entities: &mut HashMap<(usize, usize), Entity>,
+) -> GameResult {
+    let tile_map_definition = TileMapDefinition::load_from_file(ctx, map_file_path)?;
+
+    let tile_map_width = tile_map_definition.width;
+    let tile_map_height = tile_map_definition.height;
+
+    game_state.world.insert(CameraBounds {
+        min_x: 0.,
+        min_y: 0.,
+        max_x: tile_map_width as f32 - config::VIEWPORT_TILES_WIDTH_F32,
+        max_y: tile_map_height as f32 - config::VIEWPORT_TILES_HEIGHT_F32,
+    });
+
+    let tile_map = tile_map_definition.to_tile_map(ctx, entities)?;
+
+    game_state.world.insert(tile_map);
+
+    let save_slot = *game_state.world.fetch::<SaveSlot>();
+    save::load(game_state, ctx, save_slot)?;
+
+    Ok(())
+}
+
+pub fn dispose_map(game_state: &mut GameState, entities: &[Entity]) -> GameResult {
+    game_state.world.remove::<CameraBounds>();
+    game_state.world.remove::<TileMap>();
+
+    if let Err(e) = game_state.world.delete_entities(entities) {
+        return Err(ggez::GameError::CustomError(format!(
+            "Wrong generation error when deleting entities in OverworldScene::dispose: {}",
+            e
+        )));
+    }
+
+    Ok(())
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TileMapDefinition {

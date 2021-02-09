@@ -18,7 +18,7 @@ macro_rules! map(
         }
     };
 
-    { $($key:expr => $value:expr),+ } => {
+    { $($key:expr => $value:expr),+ $(,)? } => {
         {
             let mut hash_map = ::std::collections::HashMap::new();
             $(
@@ -38,7 +38,7 @@ macro_rules! set(
         }
     };
 
-    { $($key:expr),+ } => {
+    { $($key:expr),+ $(,)? } => {
         {
             let mut hash_set = ::std::collections::HashSet::new();
             $(

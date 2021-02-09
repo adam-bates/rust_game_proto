@@ -118,7 +118,7 @@ pub fn new_save(ctx: &mut ggez::Context, slot: SaveSlot, name: String) -> GameRe
     let direction = GameDirection::Down;
 
     let save_data = SaveData::new(starting_map.clone(), starting_position, direction);
-    let meta_data = MetaSaveData::new(name, starting_map.value());
+    let meta_data = MetaSaveData::new(name, starting_map);
 
     save_created_data(ctx, slot, save_data, meta_data)
 }

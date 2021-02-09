@@ -94,7 +94,8 @@ impl SaveData {
     pub fn new(
         map: MapName,
         position: Position,
-        direction: GameDirection, /*, difficulty? */
+        direction: GameDirection,
+        /*difficulty: GameDifficulty, */
     ) -> Self {
         let entities = utils::map!();
 
@@ -173,8 +174,6 @@ impl SaveData {
     }
 
     pub fn to_game_state(self, game_state: &mut GameState) -> GameResult {
-        println!("to_game_state: {:#?}", self);
-
         let mut tile_map = game_state.world.try_fetch_mut::<TileMap>().ok_or_else(|| {
             ggez::GameError::CustomError("Couldn't find tile map resource".to_string())
         })?;
@@ -241,13 +240,13 @@ impl SaveData {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct MetaSaveData {
     pub name: String,
-    pub current_map: String,
+    pub current_map: MapName,
     pub seconds_played: usize,
     pub finished: bool,
 }
 
 impl MetaSaveData {
-    pub fn new(name: String, map: String) -> Self {
+    pub fn new(name: String, map: MapName) -> Self {
         Self {
             name,
             current_map: map,

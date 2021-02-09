@@ -1,17 +1,11 @@
 mod in_game_scene;
 mod main_menu_scene;
-mod overworld_scene;
-mod pallet_town_overworld_scene;
-mod pause_menu_scene;
-mod text_box_scene;
+mod overworld;
 
 pub mod types;
 
 pub use in_game_scene::InGameScene;
 pub use main_menu_scene::MainMenuScene;
-pub use overworld_scene::OverworldScene;
-pub use pallet_town_overworld_scene::PalletTownOverworldScene;
-pub use pause_menu_scene::PauseMenuScene;
-pub use text_box_scene::TextBoxScene;
+pub use overworld::{OverworldScene, PalletTownOverworldScene, PauseMenuScene, TextBoxScene};
 
-use super::{config, ecs, error, game_state, input, maps, save, settings};
+use super::{config, ecs, error, game_state, input, maps, save, settings, utils};

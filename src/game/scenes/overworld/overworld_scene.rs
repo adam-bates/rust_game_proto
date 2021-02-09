@@ -2,8 +2,8 @@ use super::{
     config,
     ecs::{
         components::{
-            CurrentPosition, Drawable, FacingDirection, Id, Interactable, Player, SpriteRow,
-            SpriteSheet, TargetPosition, Timer,
+            CurrentPosition, Drawable, FacingDirection, Id, Interactable, MapName, Player,
+            SpriteRow, SpriteSheet, TargetPosition, Timer,
         },
         resources::{Camera, PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
         systems::{
@@ -16,18 +16,20 @@ use super::{
     error::types::GameResult,
     game_state::GameState,
     input::types::{GameButton, GameDirection, GameInput},
+    save::MetaSaveData,
     types::{Scene, SceneBuilder, SceneSwitch},
-    PalletTownOverworldScene, PauseMenuScene,
+    utils, PalletTownOverworldScene, PauseMenuScene,
 };
 use ggez::graphics::Drawable as GgezDrawable;
 use specs::{Builder, Join, WorldExt};
-use std::{cell::RefCell, path::PathBuf, rc::Rc, sync::Arc};
+use std::{cell::RefCell, collections::HashMap, path::PathBuf, rc::Rc, sync::Arc};
 
 const PLAYER_FILE: &str = "/spritesheets/entities/player.png";
 
 pub struct OverworldScene {
     dispatcher: specs::Dispatcher<'static, 'static>,
     entities: Vec<specs::Entity>,
+    map_builders: HashMap<MapName, SceneBuilder>,
 }
 
 impl OverworldScene {
@@ -170,13 +172,21 @@ impl OverworldScene {
             })
             .build();
 
+        let pallet_town_builder: SceneBuilder = Box::new(|game_state, ctx| {
+            let scene = PalletTownOverworldScene::new(game_state, ctx)?;
+            Ok(Rc::new(RefCell::new(scene)))
+        });
+
+        let map_builders = utils::map!(
+            MapName::pallet_town() => pallet_town_builder,
+        );
+
         Ok(Self {
             dispatcher,
             entities: vec![player_entity],
+            map_builders,
         })
     }
-
-    // TODO: Function to build from save file given a filesystem
 }
 
 impl std::fmt::Debug for OverworldScene {
@@ -202,13 +212,22 @@ impl Scene for OverworldScene {
 
     fn on_create(
         &mut self,
-        _game_state: &mut GameState,
+        game_state: &mut GameState,
         _ctx: &mut ggez::Context,
     ) -> GameResult<Option<SceneSwitch>> {
-        let scene_builder: SceneBuilder = Box::new(|game_state, ctx| {
-            let scene = PalletTownOverworldScene::new(game_state, ctx)?;
-            Ok(Rc::new(RefCell::new(scene)))
-        });
+        let meta_data = game_state.world.fetch::<MetaSaveData>();
+
+        let scene_builder: SceneBuilder = if meta_data.current_map == MapName::pallet_town() {
+            Box::new(|game_state, ctx| {
+                let scene = PalletTownOverworldScene::new(game_state, ctx)?;
+                Ok(Rc::new(RefCell::new(scene)))
+            })
+        } else {
+            return Err(ggez::GameError::CustomError(format!(
+                "No scene builder found for map: {:?}",
+                meta_data.current_map
+            )));
+        };
 
         Ok(Some(SceneSwitch::Push(scene_builder)))
     }
