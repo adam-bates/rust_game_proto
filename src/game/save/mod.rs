@@ -18,6 +18,7 @@ const SAVE_FILE_DIR: &str = "/saves";
 const SAVE_FILE_EXT: &str = "sav";
 const BACKUP_FILE_EXT: &str = "backup.sav";
 const META_FILE_EXT: &str = "meta";
+const BACKUP_META_FILE_EXT: &str = "backup.meta";
 
 // TODO: Look into making save/load modular.
 // Entities should "save themselves" (Maybe a saveable component? That has a save_handler and load_handler functions? With factory functions for easy creation?)
@@ -53,17 +54,33 @@ fn save_created_data(
         BACKUP_FILE_EXT
     );
     let meta_filename = &format!("{}.{}", slot.id(), META_FILE_EXT);
+    let backup_meta_filename = &format!(
+        "{}-{}.{}",
+        slot.id(),
+        time::now_timestamp(),
+        BACKUP_META_FILE_EXT
+    );
 
     let save_file_path = saves_path.join(save_filename);
     let backup_file_path = saves_path.join(backup_filename);
     let meta_file_path = saves_path.join(meta_filename);
+    let backup_meta_file_path = saves_path.join(backup_meta_filename);
 
     if vfs.exists(&save_file_path) {
         let save_file = vfs.open(&save_file_path)?;
+        let meta_file = vfs.open(&meta_file_path)?;
+
         let old_save_data: Option<SaveData> = match bincode::deserialize_from(save_file) {
             Ok(old_save_data) => Some(old_save_data),
             Err(e) => {
                 println!("Error deserializing old save data: {}", e);
+                None
+            }
+        };
+        let old_meta_data: Option<MetaSaveData> = match bincode::deserialize_from(meta_file) {
+            Ok(old_meta_data) => Some(old_meta_data),
+            Err(e) => {
+                println!("Error deserializing old meta data: {}", e);
                 None
             }
         };
@@ -74,15 +91,28 @@ fn save_created_data(
                 println!("Error serializing old save data into backup file: {}", e);
             }
         }
+        if let Some(old_meta_data) = old_meta_data {
+            let backup_meta_file = vfs.create(&backup_meta_file_path)?;
+            if let Err(e) = bincode::serialize_into(backup_meta_file, &old_meta_data) {
+                println!("Error serializing old meta data into backup file: {}", e);
+            }
+        }
     }
 
     let save_file = vfs.create(&save_file_path)?;
-    let mut meta_file = vfs.create(&meta_file_path)?;
+    let meta_file = vfs.create(&meta_file_path)?;
 
     bincode::serialize_into(save_file, &save_data).map_err(|e| {
         ggez::GameError::CustomError(format!(
             "Error serializing save data into save file: {:?}\n{}",
             save_data, e
+        ))
+    })?;
+
+    bincode::serialize_into(meta_file, &meta_save_data).map_err(|e| {
+        ggez::GameError::CustomError(format!(
+            "Error serializing meta data into meta file: {:?}\n{}",
+            meta_save_data, e
         ))
     })?;
 
@@ -101,12 +131,12 @@ fn save_created_data(
         )));
     }
 
-    let buffer = toml::to_vec(&meta_save_data)?;
-    meta_file.write_all(&buffer)?;
-
     // Delete backup save now that main save is confirmed valid
     if vfs.exists(&backup_file_path) {
         vfs.rm(&backup_file_path)?;
+    }
+    if vfs.exists(&backup_meta_file_path) {
+        vfs.rm(&backup_meta_file_path)?;
     }
 
     Ok(())
@@ -142,7 +172,7 @@ pub fn load(game_state: &mut GameState, ctx: &mut ggez::Context, slot: SaveSlot)
 
     let save_file = vfs.open(&save_file_path)?;
     let save_data: SaveData = bincode::deserialize_from(save_file).map_err(|e| {
-        ggez::GameError::CustomError(format!("Error deserializing old save data: {}", e))
+        ggez::GameError::CustomError(format!("Error deserializing save data: {}", e))
     })?;
 
     save_data.to_game_state(game_state)
@@ -162,12 +192,12 @@ pub fn load_meta(ctx: &mut ggez::Context, slot: SaveSlot) -> GameResult<Option<M
         return Ok(None);
     }
 
-    let mut meta_file = vfs.open(&meta_file_path)?;
+    let meta_file = vfs.open(&meta_file_path)?;
+    let meta_data: MetaSaveData = bincode::deserialize_from(meta_file).map_err(|e| {
+        ggez::GameError::CustomError(format!("Error deserializing meta save data: {}", e))
+    })?;
 
-    let mut encoded = String::new();
-    meta_file.read_to_string(&mut encoded)?;
-
-    Ok(Some(toml::from_str(&encoded)?))
+    Ok(Some(meta_data))
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
