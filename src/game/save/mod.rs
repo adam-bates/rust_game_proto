@@ -143,7 +143,7 @@ fn save_created_data(
 }
 
 pub fn new_save(ctx: &mut ggez::Context, slot: SaveSlot, name: String) -> GameResult {
-    let starting_map = MapName::pallet_town();
+    let starting_map = MapName::PalletTown;
     let starting_position = Position { x: 10, y: 10 };
     let direction = GameDirection::Down;
 

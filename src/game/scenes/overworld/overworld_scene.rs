@@ -178,7 +178,7 @@ impl OverworldScene {
         });
 
         let map_builders = utils::map!(
-            MapName::pallet_town() => pallet_town_builder,
+            MapName::PalletTown => pallet_town_builder,
         );
 
         Ok(Self {
@@ -216,18 +216,7 @@ impl Scene for OverworldScene {
         _ctx: &mut ggez::Context,
     ) -> GameResult<Option<SceneSwitch>> {
         let meta_data = game_state.world.fetch::<MetaSaveData>();
-
-        let scene_builder: SceneBuilder = if meta_data.current_map == MapName::pallet_town() {
-            Box::new(|game_state, ctx| {
-                let scene = PalletTownOverworldScene::new(game_state, ctx)?;
-                Ok(Rc::new(RefCell::new(scene)))
-            })
-        } else {
-            return Err(ggez::GameError::CustomError(format!(
-                "No scene builder found for map: {:?}",
-                meta_data.current_map
-            )));
-        };
+        let scene_builder: SceneBuilder = meta_data.current_map.scene_builder();
 
         Ok(Some(SceneSwitch::Push(scene_builder)))
     }
@@ -258,7 +247,6 @@ impl Scene for OverworldScene {
         Ok(())
     }
 
-    // TODO: Look for facing entity when trying to interact
     fn input(
         &mut self,
         game_state: &mut GameState,

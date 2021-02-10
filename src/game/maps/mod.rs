@@ -253,7 +253,7 @@ impl TileMapDefinition {
             overlay_height,
             spritesheet_param: ggez::graphics::DrawParam::default(),
             to_draw: vec![],
-            current_map: MapName::pallet_town(),
+            current_map: MapName::PalletTown,
         })
     }
 

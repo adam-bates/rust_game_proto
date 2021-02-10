@@ -20,10 +20,11 @@ pub use sprite_sheet::{SpriteRow, SpriteSheet};
 pub use target_position::TargetPosition;
 pub use timer::Timer;
 
-use super::super::{input, scenes};
+use super::super::{game_state::GameState, input, scenes};
 use serde::{Deserialize, Serialize};
 use specs::{Component, VecStorage};
 use specs_derive::Component;
+use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug, Component, Serialize, Deserialize, Hash, PartialEq, Eq, Clone)]
 #[storage(VecStorage)]
@@ -41,15 +42,18 @@ impl EntityName {
 
 #[derive(Debug, Component, Serialize, Deserialize, Hash, PartialEq, Eq, Clone)]
 #[storage(VecStorage)]
-pub struct MapName(String);
+pub enum MapName {
+    PalletTown,
+}
 
 impl MapName {
-    pub fn value(&self) -> String {
-        self.0.clone()
-    }
-
-    pub fn pallet_town() -> Self {
-        Self("pallet_town".to_string())
+    pub fn scene_builder(&self) -> scenes::types::SceneBuilder {
+        match self {
+            Self::PalletTown => Box::new(|game_state, ctx| {
+                let scene = scenes::PalletTownOverworldScene::new(game_state, ctx)?;
+                Ok(Rc::new(RefCell::new(scene)))
+            }),
+        }
     }
 }
 
