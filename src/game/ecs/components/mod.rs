@@ -20,7 +20,7 @@ pub use sprite_sheet::{SpriteRow, SpriteSheet};
 pub use target_position::TargetPosition;
 pub use timer::Timer;
 
-use super::super::{game_state::GameState, input, scenes};
+use super::super::{input, scenes};
 use serde::{Deserialize, Serialize};
 use specs::{Component, VecStorage};
 use specs_derive::Component;
@@ -28,16 +28,9 @@ use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug, Component, Serialize, Deserialize, Hash, PartialEq, Eq, Clone)]
 #[storage(VecStorage)]
-pub struct EntityName(String);
-
-impl EntityName {
-    pub fn value(&self) -> String {
-        self.0.clone()
-    }
-
-    pub fn some_entity() -> Self {
-        Self("some_entity".to_string())
-    }
+pub enum EntityName {
+    Player,
+    WiseOldMan,
 }
 
 #[derive(Debug, Component, Serialize, Deserialize, Hash, PartialEq, Eq, Clone)]
@@ -59,56 +52,24 @@ impl MapName {
 
 #[derive(Debug, Component, Serialize, Deserialize, Hash, PartialEq, Eq, Clone)]
 #[storage(VecStorage)]
-pub struct QuestName(String);
-
-impl QuestName {
-    pub fn value(&self) -> String {
-        self.0.clone()
-    }
-
-    pub fn some_quest() -> Self {
-        Self("some_quest".to_string())
-    }
+pub enum QuestName {
+    TestQuest,
 }
 
 #[derive(Debug, Component, Serialize, Deserialize, Hash, PartialEq, Eq, Clone)]
 #[storage(VecStorage)]
-pub struct TaskName(String);
-
-impl TaskName {
-    pub fn value(&self) -> String {
-        self.0.clone()
-    }
-
-    pub fn some_task() -> Self {
-        Self("some_task".to_string())
-    }
+pub enum TaskName {
+    TestTask,
 }
 
 #[derive(Debug, Component, Serialize, Deserialize, Hash, PartialEq, Eq, Clone)]
 #[storage(VecStorage)]
-pub struct ChoiceName(String);
-
-impl ChoiceName {
-    pub fn value(&self) -> String {
-        self.0.clone()
-    }
-
-    pub fn some_choice() -> Self {
-        Self("some_choice".to_string())
-    }
+pub enum ChoiceName {
+    TestChoice,
 }
 
 #[derive(Debug, Component, Serialize, Deserialize, Hash, PartialEq, Eq, Clone)]
 #[storage(VecStorage)]
-pub struct StateName(String);
-
-impl StateName {
-    pub fn value(&self) -> String {
-        self.0.clone()
-    }
-
-    pub fn some_state() -> Self {
-        Self("some_state".to_string())
-    }
+pub enum StateName {
+    TestState,
 }

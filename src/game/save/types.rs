@@ -134,16 +134,16 @@ impl SaveData {
             let direction = facing_direction.direction;
 
             // TODO: Get from game_state
-            let task_name = TaskName::some_task();
+            let task_name = TaskName::TestTask;
             let task_status = TaskStatus::Unknown;
 
-            let choice_name = ChoiceName::some_choice();
+            let choice_name = ChoiceName::TestChoice;
             let choice = true;
 
             let tasks = utils::map!(task_name => task_status);
             let choices = utils::map!(choice_name => choice);
 
-            let quest_name = QuestName::some_quest();
+            let quest_name = QuestName::TestQuest;
             let quest_definition = QuestDefinition { tasks, choices };
 
             let journal = utils::map!(quest_name => quest_definition);
