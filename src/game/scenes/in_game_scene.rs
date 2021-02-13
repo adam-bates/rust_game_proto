@@ -5,7 +5,7 @@ use super::{
     input::types::{GameButton, GameInput},
     save::{self, MetaSaveData, SaveSlot},
     types::{Scene, SceneBuilder, SceneSwitch},
-    OverworldScene,
+    world, MainMenuScene, OverworldScene,
 };
 use std::{cell::RefCell, rc::Rc};
 
@@ -14,13 +14,17 @@ pub struct InGameScene;
 impl InGameScene {
     pub fn new(
         game_state: &mut GameState,
-        _ctx: &mut ggez::Context,
+        ctx: &mut ggez::Context,
         save_slot: SaveSlot,
         meta_data: MetaSaveData,
     ) -> GameResult<Self> {
+        game_state.world = world::create_world();
         game_state.world.insert(DeltaTime::default());
+
         game_state.world.insert(save_slot);
         game_state.world.insert(meta_data);
+
+        save::load(game_state, ctx, save_slot)?;
 
         Ok(Self)
     }
@@ -88,9 +92,13 @@ impl Scene for InGameScene {
                             println!("Saved to slot: {}", save_slot.id());
                         }
                         GameButton::Secondary => {
-                            let save_slot = *game_state.world.fetch::<SaveSlot>();
-                            println!("Loading slot: {}", save_slot.id());
-                            save::load(game_state, ctx, save_slot)?;
+                            let scene_builder: SceneBuilder = Box::new(|game_state, ctx| {
+                                let scene = MainMenuScene::new(game_state, ctx)?;
+
+                                Ok(Rc::new(RefCell::new(scene)))
+                            });
+
+                            return Ok(Some(SceneSwitch::ReplaceAll(scene_builder)));
                         }
                         _ => {}
                     }

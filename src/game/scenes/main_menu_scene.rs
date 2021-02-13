@@ -114,7 +114,7 @@ impl Scene for MainMenuScene {
                                                         save::new_save(
                                                             ctx,
                                                             save_slot,
-                                                            "Adam".to_string(),
+                                                            format!("Adam{}", save_slot.id()),
                                                         )?;
                                                         save::load_meta(ctx, save_slot)?.expect(
                                                             &format!("Couldn't load meta save data after creating new save: {:?}", save_slot)

@@ -4,6 +4,7 @@ use super::{
     input::types::GameDirection,
     maps::TileType,
     resources::{PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
+    save::SaveData,
 };
 use specs::Join;
 
@@ -20,10 +21,12 @@ type SystemData<'a> = (
     specs::WriteStorage<'a, Timer>,
     specs::WriteStorage<'a, SpriteSheet>,
     specs::WriteStorage<'a, FacingDirection>,
+    Option<specs::Write<'a, SaveData>>,
 );
 
 fn move_target_position<'a>(
     should_update_background_tiles_r: &mut ShouldUpdateBackgroundTiles,
+    save_data: &mut SaveData,
     tile_map: &mut TileMap,
     current_position: &CurrentPosition,
     target_position: &mut TargetPosition,
@@ -93,6 +96,9 @@ fn move_target_position<'a>(
         target_position.y = target_position_y;
         target_position.is_moving = true;
 
+        save_data.player.position.x = target_position_x;
+        save_data.player.position.y = target_position_y;
+
         sprite_sheet.set_row(match direction {
             GameDirection::Down => config::ENTITY_SPRITE_SHEET_IDX_WALK_DOWN,
             GameDirection::Right => config::ENTITY_SPRITE_SHEET_IDX_WALK_RIGHT,
@@ -113,6 +119,7 @@ fn handle_input<'a>(
         mut timer_c,
         mut sprite_sheet_c,
         mut facing_direction_c,
+        opt_save_data_r,
     ): SystemData<'a>,
     direction: &GameDirection,
 ) {
@@ -138,15 +145,16 @@ fn handle_input<'a>(
             let facing_direction = facing_direction as &mut FacingDirection;
 
             if timer.finished() {
-                // println!("Moving: {:#?}", direction);
-                // println!("Facing: {:#?}", facing_direction);
-                // println!("CurrentPosition: {:#?}", current_position);
-                // println!("TargetPosition: {:#?}", target_position);
                 if target_position.is_moving || facing_direction.direction == *direction {
+                    let mut save_data =
+                        opt_save_data_r.expect("SaveData resource not in game world");
+
                     facing_direction.direction = *direction;
+                    save_data.player.position.facing = Some(*direction);
 
                     move_target_position(
                         &mut should_update_background_tiles_r,
+                        &mut save_data,
                         tile_map,
                         current_position,
                         target_position,
@@ -163,6 +171,8 @@ fn handle_input<'a>(
                     GameDirection::Right => config::ENTITY_SPRITE_SHEET_IDX_IDLE_RIGHT,
                 });
             }
+
+            return;
         }
     }
 }
@@ -181,6 +191,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
             timer_c,
             sprite_sheet_c,
             facing_direction_c,
+            opt_save_data_r,
         ),
         name = "MovePlayerTargetPositionSystem"
     )]
@@ -196,6 +207,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
             timer_c,
             mut sprite_sheet_c,
             mut facing_direction_c,
+            opt_save_data_r,
         ): Self::SystemData,
     ) {
         // Last requested direction
@@ -211,6 +223,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                     timer_c,
                     sprite_sheet_c,
                     facing_direction_c,
+                    opt_save_data_r,
                 ),
                 &direction,
             );
@@ -228,6 +241,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                     timer_c,
                     sprite_sheet_c,
                     facing_direction_c,
+                    opt_save_data_r,
                 ),
                 &direction,
             );
@@ -245,6 +259,7 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                     timer_c,
                     sprite_sheet_c,
                     facing_direction_c,
+                    opt_save_data_r,
                 ),
                 &direction,
             );

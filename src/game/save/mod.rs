@@ -1,15 +1,15 @@
 mod types;
 
 pub use types::{
-    EntityDefinition, MetaSaveData, PlayerDefinition, Position, QuestDefinition, SaveData,
+    EntityInstanceDefinition, MetaSaveData, PlayerDefinition, Position, QuestDefinition, SaveData,
     TaskStatus, WorldDefinition,
 };
 
 use super::{
-    ecs::{self, components::MapName},
+    ecs,
     error::types::GameResult,
     game_state::GameState,
-    input::{self, types::GameDirection},
+    input,
     utils::{self, time},
 };
 use serde::{Deserialize, Serialize};
@@ -25,6 +25,28 @@ const BACKUP_META_FILE_EXT: &str = "backup.meta";
 // Every entity has mutable state (even signs, they might change text), but what they save/load is different per entity
 // Can we save/load dynamic structures? Maybe a hashmap? (more prone to error, technically slower but not noticeable)
 // Or we could just hard-code everything we need ... Just might not be as flexible
+
+/*
+
+1. Request New Save
+2. Create default save (should this include every entity with no locations)
+3. Deserialize requested save file
+
+4. Insert save, meta, and slot into world as resources
+5. Overworld reads meta and save data to get player's current map and location, and entities
+6. Map is loaded, finding and moving -- or creating -- entities based on save data
+
+7. Update updates save data resource
+
+8. Change map is requested
+8. Destroy all entities created in current map (ie. signs, doors, etc. Not NPCs or players)
+10. ReplaceTop scene with new map
+6. New map is loaded, finding and moving -- or creating -- entities based on save data
+
+12. Save is requested
+13. Save the current save and meta resources in the save slot
+
+*/
 
 fn get_user_data_vfs(ctx: &mut ggez::Context) -> GameResult<&Box<dyn ggez::vfs::VFS>> {
     ctx.filesystem
@@ -143,12 +165,8 @@ fn save_created_data(
 }
 
 pub fn new_save(ctx: &mut ggez::Context, slot: SaveSlot, name: String) -> GameResult {
-    let starting_map = MapName::PalletTown;
-    let starting_position = Position { x: 10, y: 10 };
-    let direction = GameDirection::Down;
-
-    let save_data = SaveData::new(starting_map.clone(), starting_position, direction);
-    let meta_data = MetaSaveData::new(name, starting_map);
+    let save_data = SaveData::new();
+    let meta_data = MetaSaveData::new(name);
 
     save_created_data(ctx, slot, save_data, meta_data)
 }

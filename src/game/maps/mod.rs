@@ -6,7 +6,6 @@ use super::{
     },
     error::types::GameResult,
     game_state::GameState,
-    save::{self, SaveSlot},
 };
 use serde::{Deserialize, Serialize};
 use specs::{Entity, Join, WorldExt};
@@ -33,9 +32,6 @@ pub fn load_map(
     let tile_map = tile_map_definition.to_tile_map(ctx, entities)?;
 
     game_state.world.insert(tile_map);
-
-    let save_slot = *game_state.world.fetch::<SaveSlot>();
-    save::load(game_state, ctx, save_slot)?;
 
     Ok(())
 }

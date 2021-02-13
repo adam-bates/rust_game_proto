@@ -2,8 +2,8 @@ use super::{
     config,
     ecs::{
         components::{
-            CurrentPosition, Drawable, FacingDirection, Id, Interactable, MapName, Player,
-            SpriteRow, SpriteSheet, TargetPosition, Timer,
+            CurrentPosition, Drawable, FacingDirection, Id, Interactable, Player, SpriteRow,
+            SpriteSheet, TargetPosition, Timer,
         },
         resources::{Camera, PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
         systems::{
@@ -16,30 +16,48 @@ use super::{
     error::types::GameResult,
     game_state::GameState,
     input::types::{GameButton, GameDirection, GameInput},
-    save::MetaSaveData,
+    save::{MetaSaveData, SaveData},
     types::{Scene, SceneBuilder, SceneSwitch},
-    utils, PalletTownOverworldScene, PauseMenuScene,
+    PauseMenuScene,
 };
 use ggez::graphics::Drawable as GgezDrawable;
 use specs::{Builder, Join, WorldExt};
-use std::{cell::RefCell, collections::HashMap, path::PathBuf, rc::Rc, sync::Arc};
+use std::{cell::RefCell, path::PathBuf, rc::Rc, sync::Arc};
 
 const PLAYER_FILE: &str = "/spritesheets/entities/player.png";
 
 pub struct OverworldScene {
     dispatcher: specs::Dispatcher<'static, 'static>,
     entities: Vec<specs::Entity>,
-    map_builders: HashMap<MapName, SceneBuilder>,
 }
 
 impl OverworldScene {
     pub fn new(game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
-        // TODO: Build from loaded save file
+        let save_data = {
+            let save_data_r = game_state.world.try_fetch::<SaveData>().ok_or_else(|| {
+                ggez::GameError::CustomError("SaveData resource not found".to_string())
+            })?;
 
-        let player_target_position = TargetPosition::default();
+            (*save_data_r).clone()
+        };
+
+        let player_target_position = TargetPosition {
+            x: save_data.player.position.x,
+            y: save_data.player.position.y,
+            from_x: save_data.player.position.x,
+            from_y: save_data.player.position.y,
+            is_moving: false,
+        };
         let player_current_position = CurrentPosition {
             x: player_target_position.x as f32,
             y: player_target_position.y as f32,
+        };
+        let player_facing_direction = FacingDirection {
+            direction: save_data
+                .player
+                .position
+                .facing
+                .unwrap_or_else(|| GameDirection::Down),
         };
 
         game_state.world.register::<Id>();
@@ -132,6 +150,8 @@ impl OverworldScene {
         let player_height =
             player_image.height() as f32 / player_spritesheet.sprite_rows.len() as f32;
 
+        // Bottom of image should be level with floor
+        // And sides of image should be centered
         let player_offset_x = (player_width - config::TILE_PIXELS_SIZE_F32) / (player_width * 2.);
         let player_offset_y = (player_height - config::TILE_PIXELS_SIZE_F32) / player_height;
 
@@ -141,8 +161,6 @@ impl OverworldScene {
         const OFFSET_FIX_X: f32 = -0.001;
         const OFFSET_FIX_Y: f32 = 0.02;
 
-        // Bottom of image should be level with floor
-        // And sides of image should be centered
         let player_draw_param = ggez::graphics::DrawParam::default().offset([
             player_offset_x + OFFSET_FIX_X,
             player_offset_y + OFFSET_FIX_Y,
@@ -159,7 +177,7 @@ impl OverworldScene {
                 duration: config::WALK_SECONDS_PER_TILE,
                 repeating: true,
                 elapsed: 0.0,
-                finished: true, // Start finished to allow movement
+                finished: true,
                 should_tick: false,
             })
             .with(Drawable {
@@ -167,24 +185,12 @@ impl OverworldScene {
                 draw_params: player_draw_param,
             })
             .with(player_spritesheet)
-            .with(FacingDirection {
-                direction: GameDirection::Down,
-            })
+            .with(player_facing_direction)
             .build();
-
-        let pallet_town_builder: SceneBuilder = Box::new(|game_state, ctx| {
-            let scene = PalletTownOverworldScene::new(game_state, ctx)?;
-            Ok(Rc::new(RefCell::new(scene)))
-        });
-
-        let map_builders = utils::map!(
-            MapName::PalletTown => pallet_town_builder,
-        );
 
         Ok(Self {
             dispatcher,
             entities: vec![player_entity],
-            map_builders,
         })
     }
 }
@@ -215,8 +221,8 @@ impl Scene for OverworldScene {
         game_state: &mut GameState,
         _ctx: &mut ggez::Context,
     ) -> GameResult<Option<SceneSwitch>> {
-        let meta_data = game_state.world.fetch::<MetaSaveData>();
-        let scene_builder: SceneBuilder = meta_data.current_map.scene_builder();
+        let save_data = game_state.world.fetch::<SaveData>();
+        let scene_builder: SceneBuilder = save_data.player.map.scene_builder();
 
         Ok(Some(SceneSwitch::Push(scene_builder)))
     }
@@ -448,6 +454,13 @@ impl Scene for OverworldScene {
 
                 if !target_position.is_moving && facing_direction.direction != direction {
                     facing_direction.direction = direction;
+
+                    game_state
+                        .world
+                        .fetch_mut::<SaveData>()
+                        .player
+                        .position
+                        .facing = Some(direction);
 
                     timer.reset();
                     timer.elapsed = timer.duration - config::WAIT_AFTER_TURN_BEFORE_MOVE;

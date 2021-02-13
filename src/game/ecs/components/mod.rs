@@ -20,7 +20,7 @@ pub use sprite_sheet::{SpriteRow, SpriteSheet};
 pub use target_position::TargetPosition;
 pub use timer::Timer;
 
-use super::super::{input, scenes};
+use super::super::{game_state::GameState, input, scenes};
 use serde::{Deserialize, Serialize};
 use specs::{Component, VecStorage};
 use specs_derive::Component;
@@ -29,8 +29,13 @@ use std::{cell::RefCell, rc::Rc};
 #[derive(Debug, Component, Serialize, Deserialize, Hash, PartialEq, Eq, Clone)]
 #[storage(VecStorage)]
 pub enum EntityName {
-    Player,
     WiseOldMan,
+}
+
+impl EntityName {
+    pub fn new_entity(game_state: &mut GameState, ctx: &mut ggez::Context) {
+        // TODO: find and move, or insert
+    }
 }
 
 #[derive(Debug, Component, Serialize, Deserialize, Hash, PartialEq, Eq, Clone)]
