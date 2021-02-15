@@ -42,6 +42,7 @@ impl EntityName {
 #[storage(VecStorage)]
 pub enum MapName {
     PalletTown,
+    Varrock,
 }
 
 impl MapName {
@@ -49,6 +50,10 @@ impl MapName {
         match self {
             Self::PalletTown => Box::new(|game_state, ctx| {
                 let scene = scenes::PalletTownOverworldScene::new(game_state, ctx)?;
+                Ok(Rc::new(RefCell::new(scene)))
+            }),
+            Self::Varrock => Box::new(|game_state, ctx| {
+                let scene = scenes::VarrockOverworldScene::new(game_state, ctx)?;
                 Ok(Rc::new(RefCell::new(scene)))
             }),
         }

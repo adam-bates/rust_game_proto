@@ -155,9 +155,16 @@ impl SaveData {
                 dialog_id: 0,
             },
         );
+        let varrock_entity_instances = utils::map!(
+            EntityName::WiseOldMan => EntityInstanceDefinition {
+                position: Position { x: 7, y: 7, facing: Some(GameDirection::Down) },
+                dialog_id: 0,
+            },
+        );
 
         let maps = utils::map!(
             MapName::PalletTown => MapDefinition::new(pallet_town_entity_instances),
+            MapName::Varrock => MapDefinition::new(varrock_entity_instances),
         );
 
         let entity_states = utils::map!(
@@ -166,10 +173,10 @@ impl SaveData {
 
         Self {
             player: PlayerDefinition::new(
-                MapName::PalletTown,
+                MapName::Varrock,
                 Position {
-                    x: 10,
-                    y: 10,
+                    x: 4,
+                    y: 8,
                     facing: Some(GameDirection::Down),
                 },
             ),
@@ -207,7 +214,7 @@ impl MetaSaveData {
     pub fn new(name: String) -> Self {
         Self {
             name,
-            current_map: MapName::PalletTown,
+            current_map: MapName::Varrock,
             seconds_played: 0,
             finished: false,
         }

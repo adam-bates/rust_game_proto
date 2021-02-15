@@ -20,7 +20,6 @@ impl InGameScene {
     ) -> GameResult<Self> {
         game_state.world = world::create_world();
         game_state.world.insert(DeltaTime::default());
-
         game_state.world.insert(save_slot);
         game_state.world.insert(meta_data);
 
