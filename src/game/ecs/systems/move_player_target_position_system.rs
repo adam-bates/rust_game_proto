@@ -1,9 +1,11 @@
 use super::{
-    components::{CurrentPosition, FacingDirection, Player, SpriteSheet, TargetPosition, Timer},
+    components::{
+        CurrentPosition, Door, FacingDirection, Player, SpriteSheet, TargetPosition, Timer,
+    },
     config,
     input::types::GameDirection,
     maps::TileType,
-    resources::{PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
+    resources::{DoorRequest, PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
     save::SaveData,
 };
 use specs::Join;
@@ -22,6 +24,8 @@ type SystemData<'a> = (
     specs::WriteStorage<'a, SpriteSheet>,
     specs::WriteStorage<'a, FacingDirection>,
     Option<specs::Write<'a, SaveData>>,
+    specs::Write<'a, DoorRequest>,
+    specs::ReadStorage<'a, Door>,
 );
 
 fn move_target_position<'a>(
@@ -33,6 +37,8 @@ fn move_target_position<'a>(
     timer: &mut Timer,
     sprite_sheet: &mut SpriteSheet,
     direction: &GameDirection,
+    door_request: &mut DoorRequest,
+    door_c: specs::ReadStorage<'a, Door>,
 ) {
     let (direction_x, direction_y) = direction.to_xy();
 
@@ -56,7 +62,11 @@ fn move_target_position<'a>(
     let target_tile = tile_map.get_tile(target_position_x, target_position_y);
 
     // Another entity is already in the target location
-    if target_tile.entity.is_some() {
+    if let Some(entity) = target_tile.entity {
+        if let Some(door) = door_c.get(entity) {
+            door_request.requesting = Some((*door).clone());
+        }
+
         return;
     }
 
@@ -120,6 +130,8 @@ fn handle_input<'a>(
         mut sprite_sheet_c,
         mut facing_direction_c,
         opt_save_data_r,
+        mut door_request_r,
+        door_c,
     ): SystemData<'a>,
     direction: &GameDirection,
 ) {
@@ -161,6 +173,8 @@ fn handle_input<'a>(
                         timer,
                         sprite_sheet,
                         direction,
+                        &mut door_request_r,
+                        door_c,
                     );
                 }
             } else if !target_position.is_moving {
@@ -192,6 +206,8 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
             sprite_sheet_c,
             facing_direction_c,
             opt_save_data_r,
+            door_request_r,
+            door_c,
         ),
         name = "MovePlayerTargetPositionSystem"
     )]
@@ -208,6 +224,8 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
             mut sprite_sheet_c,
             mut facing_direction_c,
             opt_save_data_r,
+            door_request_r,
+            door_c,
         ): Self::SystemData,
     ) {
         // Last requested direction
@@ -224,6 +242,8 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                     sprite_sheet_c,
                     facing_direction_c,
                     opt_save_data_r,
+                    door_request_r,
+                    door_c,
                 ),
                 &direction,
             );
@@ -242,6 +262,8 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                     sprite_sheet_c,
                     facing_direction_c,
                     opt_save_data_r,
+                    door_request_r,
+                    door_c,
                 ),
                 &direction,
             );
@@ -260,6 +282,8 @@ impl<'a> specs::System<'a> for MovePlayerTargetPositionSystem {
                     sprite_sheet_c,
                     facing_direction_c,
                     opt_save_data_r,
+                    door_request_r,
+                    door_c,
                 ),
                 &direction,
             );

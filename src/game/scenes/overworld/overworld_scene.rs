@@ -2,10 +2,12 @@ use super::{
     config,
     ecs::{
         components::{
-            CurrentPosition, Drawable, FacingDirection, Id, Interactable, Player, SpriteRow,
+            CurrentPosition, Door, Drawable, FacingDirection, Id, Interactable, Player, SpriteRow,
             SpriteSheet, TargetPosition, Timer,
         },
-        resources::{Camera, PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap},
+        resources::{
+            Camera, DoorRequest, PlayerMovementRequest, ShouldUpdateBackgroundTiles, TileMap,
+        },
         systems::{
             AnimateSystem, FillTileMapToDrawSystem, FollowPlayerSystem,
             MoveBackgroundDrawParamSystem, MoveCurrentPositionSystem,
@@ -69,6 +71,7 @@ impl OverworldScene {
         game_state.world.register::<FacingDirection>();
         game_state.world.register::<SpriteSheet>();
         game_state.world.register::<Interactable>();
+        game_state.world.register::<Door>();
         game_state.world.insert(PlayerMovementRequest::default());
         game_state.world.insert(Camera {
             x: player_target_position.x as f32,
@@ -76,6 +79,7 @@ impl OverworldScene {
             ..Default::default()
         });
         game_state.world.insert(ShouldUpdateBackgroundTiles(true));
+        game_state.world.insert(DoorRequest::default());
 
         let dispatcher = specs::DispatcherBuilder::new()
             .with(
@@ -205,6 +209,8 @@ impl Scene for OverworldScene {
     fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
         game_state.world.remove::<Camera>();
         game_state.world.remove::<PlayerMovementRequest>();
+        game_state.world.remove::<ShouldUpdateBackgroundTiles>();
+        game_state.world.remove::<DoorRequest>();
 
         if let Err(e) = game_state.world.delete_entities(self.entities.as_slice()) {
             return Err(ggez::GameError::CustomError(format!(
@@ -235,6 +241,14 @@ impl Scene for OverworldScene {
         _delta_secs: f32,
     ) -> GameResult<Option<SceneSwitch>> {
         self.dispatcher.dispatch(&game_state.world);
+
+        let mut door_request = game_state.world.fetch_mut::<DoorRequest>();
+        if let Some(door) = door_request.requesting.take() {
+            let scene_builder: SceneBuilder = door.to_map.scene_builder_from_door(door.to_id)?;
+
+            return Ok(Some(SceneSwitch::ReplaceTop(scene_builder)));
+        }
+
         Ok(None)
     }
 

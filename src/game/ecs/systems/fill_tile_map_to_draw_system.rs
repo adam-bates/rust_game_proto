@@ -13,7 +13,10 @@ impl<'a> specs::System<'a> for FillTileMapToDrawSystem {
         specs::ReadStorage<'a, Drawable>,
     );
 
-    #[tracing::instrument(skip(camera_r, tile_map_r, drawable_c,), name = "FillTileMapToDrawSystem")]
+    #[tracing::instrument(
+        skip(camera_r, tile_map_r, drawable_c,),
+        name = "FillTileMapToDrawSystem"
+    )]
     fn run(&mut self, (camera_r, tile_map_r, drawable_c): Self::SystemData) {
         if let Some(mut tile_map_r) = tile_map_r {
             tile_map_r.to_draw = vec![];

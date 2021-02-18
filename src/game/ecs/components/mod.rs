@@ -1,4 +1,5 @@
 mod current_position;
+mod door;
 mod drawable;
 mod facing_direction;
 mod id;
@@ -10,6 +11,7 @@ mod target_position;
 mod timer;
 
 pub use current_position::CurrentPosition;
+pub use door::Door;
 pub use drawable::Drawable;
 pub use facing_direction::FacingDirection;
 pub use id::Id;
@@ -20,7 +22,14 @@ pub use sprite_sheet::{SpriteRow, SpriteSheet};
 pub use target_position::TargetPosition;
 pub use timer::Timer;
 
-use super::super::{game_state::GameState, input, scenes};
+use super::super::{
+    error::types::GameResult,
+    game_state::GameState,
+    input::{self, types::GameDirection},
+    maps,
+    save::{MetaSaveData, SaveData},
+    scenes,
+};
 use serde::{Deserialize, Serialize};
 use specs::{Component, VecStorage};
 use specs_derive::Component;
@@ -56,6 +65,54 @@ impl MapName {
                 let scene = scenes::VarrockOverworldScene::new(game_state, ctx)?;
                 Ok(Rc::new(RefCell::new(scene)))
             }),
+        }
+    }
+
+    pub fn scene_builder_from_door(
+        &self,
+        door_id: usize,
+    ) -> GameResult<scenes::types::SceneBuilder> {
+        let (position, direction) = self.get_door_position(door_id).ok_or_else(|| {
+            ggez::GameError::CustomError(format!(
+                "No door found for door_id [{}] for map: {:#?}",
+                door_id, self
+            ))
+        })?;
+
+        let map_scene_builder: scenes::types::SceneBuilder = self.scene_builder();
+
+        let map = self.clone();
+
+        Ok(Box::new(move |game_state: &mut GameState, ctx| {
+            {
+                let mut save_data = game_state.world.fetch_mut::<SaveData>();
+                save_data.player.map = map.clone();
+
+                let delta_xy = direction.to_xy();
+
+                save_data.player.position.x = (position.0 as isize + delta_xy.0) as usize;
+                save_data.player.position.y = (position.1 as isize + delta_xy.1) as usize;
+                save_data.player.position.facing = Some(direction);
+            }
+            {
+                let mut meta_save_data = game_state.world.fetch_mut::<MetaSaveData>();
+                meta_save_data.current_map = map.clone();
+            }
+
+            map_scene_builder(game_state, ctx)
+        }))
+    }
+
+    pub fn get_door_position(&self, door_id: usize) -> Option<((usize, usize), GameDirection)> {
+        match self {
+            Self::PalletTown => match door_id {
+                0 => Some(((19, 19), GameDirection::Up)),
+                _ => None,
+            },
+            Self::Varrock => match door_id {
+                0 => Some(((13, 0), GameDirection::Down)),
+                _ => None,
+            },
         }
     }
 }

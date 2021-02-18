@@ -19,6 +19,13 @@ pub struct InputState {
     pub gamepad_axis_y: f32,
 }
 
+impl InputState {
+    pub fn reset(&mut self) {
+        self.gamepad_axis_x = 0.;
+        self.gamepad_axis_y = 0.;
+    }
+}
+
 pub struct GameState {
     pub world: specs::World,
     pub input_state: InputState,

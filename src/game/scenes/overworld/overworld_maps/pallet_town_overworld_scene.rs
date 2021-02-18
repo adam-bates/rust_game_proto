@@ -1,8 +1,11 @@
 use super::{
     config,
-    ecs::components::{
-        CurrentPosition, Drawable, EntityName, FacingDirection, Id, Interactable, MapName,
-        SpriteRow, SpriteSheet,
+    ecs::{
+        components::{
+            CurrentPosition, Door, Drawable, EntityName, FacingDirection, Id, Interactable,
+            MapName, SpriteRow, SpriteSheet,
+        },
+        resources::{DoorRequest, PlayerMovementRequest, ShouldUpdateBackgroundTiles},
     },
     error::types::GameResult,
     game_state::GameState,
@@ -18,11 +21,28 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 const TILE_MAP_DEFINITION_FILE: &str = "/bin/maps/pallet_town";
 
 pub struct PalletTownOverworldScene {
-    entities: Vec<Entity>,
+    scene_entities: Vec<Entity>,
 }
 
 impl PalletTownOverworldScene {
     pub fn new(game_state: &mut GameState, ctx: &mut ggez::Context) -> GameResult<Self> {
+        {
+            let mut door_request = game_state.world.fetch_mut::<DoorRequest>();
+            door_request.requesting.take();
+        }
+        {
+            let mut player_movement_request = game_state.world.fetch_mut::<PlayerMovementRequest>();
+            player_movement_request.last_requested_direction = None;
+            player_movement_request.last_requested_x_direction = None;
+            player_movement_request.last_requested_y_direction = None;
+            game_state.input_state.reset();
+        }
+        {
+            let mut should_update_background_tiles =
+                game_state.world.fetch_mut::<ShouldUpdateBackgroundTiles>();
+            should_update_background_tiles.0 = true;
+        }
+
         let save_data = {
             let save_data_r = game_state.world.try_fetch::<SaveData>().ok_or_else(|| {
                 ggez::GameError::CustomError("SaveData resource not found".to_string())
@@ -32,9 +52,16 @@ impl PalletTownOverworldScene {
         };
 
         let mut entities = HashMap::new();
+        let mut scene_entities = vec![];
 
         let player_position = (save_data.player.position.x, save_data.player.position.y);
-        let player_entity = maps::find_and_move_player(game_state, player_position)?;
+        let player_direction = save_data
+            .player
+            .position
+            .facing
+            .unwrap_or_else(|| GameDirection::Down);
+        let player_entity =
+            maps::find_and_move_player(game_state, player_position, player_direction)?;
         entities.insert(player_position, player_entity);
 
         let pallet_town_map = save_data
@@ -102,6 +129,7 @@ impl PalletTownOverworldScene {
                 })
                 .build();
             entities.insert(npc_position, npc_entity);
+            scene_entities.push(npc_entity);
         }
 
         let sign_1_position = (8, 6);
@@ -126,6 +154,7 @@ impl PalletTownOverworldScene {
             })
             .build();
         entities.insert(sign_1_position, sign_1_entity);
+        scene_entities.push(sign_1_entity);
 
         let sign_2_position = (13, 14);
         let sign_2_entity = game_state
@@ -149,12 +178,27 @@ impl PalletTownOverworldScene {
             })
             .build();
         entities.insert(sign_2_position, sign_2_entity);
+        scene_entities.push(sign_2_entity);
+
+        let door_1_position = (19, 19);
+        let door_1_entity = game_state
+            .world
+            .create_entity()
+            .with(Id::new("Door1"))
+            .with(Door {
+                id: 0,
+                to_map: MapName::Varrock,
+                to_id: 0,
+            })
+            .build();
+        entities.insert(door_1_position, door_1_entity);
+        scene_entities.push(door_1_entity);
 
         maps::load_map(game_state, ctx, TILE_MAP_DEFINITION_FILE, &mut entities)?;
 
         let entities: Vec<Entity> = entities.values().cloned().collect();
 
-        Ok(Self { entities })
+        Ok(Self { scene_entities })
     }
 }
 
@@ -166,7 +210,7 @@ impl std::fmt::Debug for PalletTownOverworldScene {
 
 impl Scene for PalletTownOverworldScene {
     fn dispose(&mut self, game_state: &mut GameState, _ctx: &mut ggez::Context) -> GameResult {
-        maps::dispose_map(game_state, self.entities.as_slice())
+        maps::dispose_map(game_state, self.scene_entities.as_slice())
     }
 
     #[tracing::instrument]

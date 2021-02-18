@@ -1,11 +1,12 @@
 use super::{
     config,
     ecs::{
-        components::{CurrentPosition, MapName, Player, TargetPosition},
+        components::{CurrentPosition, FacingDirection, MapName, Player, TargetPosition},
         resources::{CameraBounds, Frame, Tile, TileMap},
     },
     error::types::GameResult,
     game_state::GameState,
+    input::types::GameDirection,
 };
 use serde::{Deserialize, Serialize};
 use specs::{Entity, Join, WorldExt};
@@ -164,11 +165,13 @@ fn build_animation_from_layer(layer: TileLayer) -> Vec<Frame> {
 pub fn find_and_move_player(
     game_state: &mut GameState,
     position: (usize, usize),
+    direction: GameDirection,
 ) -> GameResult<Entity> {
-    let (player_c, mut current_position_c, mut target_position_c): (
+    let (player_c, mut current_position_c, mut target_position_c, mut facing_direction_c): (
         specs::ReadStorage<Player>,
         specs::WriteStorage<CurrentPosition>,
         specs::WriteStorage<TargetPosition>,
+        specs::WriteStorage<FacingDirection>,
     ) = game_state.world.system_data();
 
     let mut player_entity = None;
@@ -178,14 +181,21 @@ pub fn find_and_move_player(
     let player_entity = player_entity
         .ok_or_else(|| ggez::GameError::CustomError("No player entity in world".to_string()))?;
 
-    for (_, current_position, target_position) in
-        (&player_c, &mut current_position_c, &mut target_position_c).join()
+    for (_, current_position, target_position, facing_direction) in (
+        &player_c,
+        &mut current_position_c,
+        &mut target_position_c,
+        &mut facing_direction_c,
+    )
+        .join()
     {
         // Help linter
         #[cfg(debug_assertions)]
         let current_position = current_position as &mut CurrentPosition;
         #[cfg(debug_assertions)]
         let target_position = target_position as &mut TargetPosition;
+        #[cfg(debug_assertions)]
+        let facing_direction = facing_direction as &mut FacingDirection;
 
         current_position.x = position.0 as f32;
         current_position.y = position.1 as f32;
@@ -193,6 +203,7 @@ pub fn find_and_move_player(
         target_position.from_y = position.1;
         target_position.x = position.0;
         target_position.y = position.1;
+        facing_direction.direction = direction;
     }
 
     Ok(player_entity)
@@ -249,7 +260,6 @@ impl TileMapDefinition {
             overlay_height,
             spritesheet_param: ggez::graphics::DrawParam::default(),
             to_draw: vec![],
-            current_map: MapName::PalletTown,
         })
     }
 
@@ -319,11 +329,4 @@ pub struct MapTile {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MapTileAnimationFrame {
     pub tile_id: usize,
-}
-
-#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq)]
-pub enum EntityType {
-    Sign { id: u8 },
-    Player,
-    WiseOldMan,
 }

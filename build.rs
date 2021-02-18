@@ -15,10 +15,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     serialize_files(&binary_assets_path, build_assets_exports_path)?;
 
-    println!("cargo:rerun-if-changed=assets/spritesheets");
-    println!("cargo:rerun-if-changed=build_assets");
+    println!("cargo:rerun-if-changed=build_assets/tiled/exports/**");
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=Cargo.lock");
 
     Ok(())
 }
@@ -440,26 +438,4 @@ struct Tile {
 #[derive(Serialize, Deserialize, Debug)]
 struct TileAnimationFrame {
     tile_id: u64,
-}
-
-#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq)]
-enum EntityType {
-    Sign { id: u8 },
-    Player,
-    WiseOldMan,
-}
-
-impl From<&str> for EntityType {
-    fn from(string: &str) -> Self {
-        match string {
-            "Sign1" => Self::Sign { id: 1 },
-            "Sign2" => Self::Sign { id: 2 },
-            "Sign3" => Self::Sign { id: 3 },
-            "Sign4" => Self::Sign { id: 4 },
-            "Sign5" => Self::Sign { id: 5 },
-            "Player" => Self::Player,
-            "WiseOldMan" => Self::WiseOldMan,
-            _ => panic!(format!("Unknown entity type: {}", string)),
-        }
-    }
 }

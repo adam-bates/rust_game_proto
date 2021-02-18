@@ -28,7 +28,6 @@ pub struct TileMap {
     pub overlay_height: usize,
     pub spritesheet_param: ggez::graphics::DrawParam,
     pub to_draw: Vec<Drawable>,
-    pub current_map: MapName,
 }
 
 impl TileMap {
