@@ -69,7 +69,7 @@ impl MapName {
     }
 
     pub fn scene_builder_from_door(
-        &self,
+        self,
         door_id: usize,
     ) -> GameResult<scenes::types::SceneBuilder> {
         let (position, direction) = self.get_door_position(door_id).ok_or_else(|| {
@@ -81,12 +81,10 @@ impl MapName {
 
         let map_scene_builder: scenes::types::SceneBuilder = self.scene_builder();
 
-        let map = self.clone();
-
         Ok(Box::new(move |game_state: &mut GameState, ctx| {
             {
                 let mut save_data = game_state.world.fetch_mut::<SaveData>();
-                save_data.player.map = map.clone();
+                save_data.player.map = self.clone();
 
                 let delta_xy = direction.to_xy();
 
@@ -96,7 +94,7 @@ impl MapName {
             }
             {
                 let mut meta_save_data = game_state.world.fetch_mut::<MetaSaveData>();
-                meta_save_data.current_map = map.clone();
+                meta_save_data.current_map = self.clone();
             }
 
             map_scene_builder(game_state, ctx)
